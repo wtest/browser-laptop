@@ -43,6 +43,7 @@ const keytar = require('keytar')
 const settings = require('../js/constants/settings')
 const siteSettings = require('../js/state/siteSettings')
 const spellCheck = require('./spellCheck')
+const ledger = require('./ledger')
 
 // Used to collect the per window state when shutting down the application
 let perWindowState = []
@@ -377,6 +378,7 @@ app.on('ready', () => {
     SiteHacks.init()
     NoScript.init()
     spellCheck.init()
+    ledger.init()
 
     let masterKey
     ipcMain.on(messages.DELETE_PASSWORD, (e, password) => {
