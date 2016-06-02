@@ -17,6 +17,7 @@ const getSetting = require('../settings').getSetting
 const importFromHTML = require('../lib/importer').importFromHTML
 const UrlUtil = require('../lib/urlutil')
 const urlParse = require('url').parse
+const ledger = require('../../app/ledger')
 
 const { l10nErrorText } = require('../lib/errorUtil')
 const { aboutUrls, getSourceAboutUrl, isIntermediateAboutPage } = require('../lib/appUrlUtil')
@@ -173,6 +174,7 @@ const doAction = (action) => {
         // initiated navigation (bookmarks, etc...)
         updateNavBarInput(action.location, frameStatePath(action.key))
       }
+      console.log(action.location)
       break
     case WindowConstants.WINDOW_SET_NAVIGATED:
       action.location = action.location.trim()
@@ -342,6 +344,12 @@ const doAction = (action) => {
         activeFrameKey: action.frameProps.get('key'),
         previewFrameKey: null
       })
+
+      // Ledger integration
+      var loc = windowState.toJS().frames.filter((frame) => frame.key === action.frameProps.get('key'))[0].location
+      console.log(loc)
+      console.log(ledger.visit(loc))
+
       updateTabPageIndex(action.frameProps)
       break
     case WindowConstants.WINDOW_SET_PREVIEW_FRAME:
