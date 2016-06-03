@@ -122,6 +122,7 @@ if (ipc) {
 
     if ((!enabledP) || (!synopsis) || (!location)) return
 
+    console.log('\n' + location + ': new=' + (!locations[location]))
     if (!locations[location]) {
       locations[location] = true
 
