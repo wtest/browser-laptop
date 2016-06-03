@@ -10,19 +10,59 @@ const fs = require('fs')
 const path = require('path')
 const messages = require('../js/constants/messages')
 
-const storagePath = path.join(app.getPath('userData'), 'publisher-mappings.json')
+// publisher mapping information for debugging goes to this file
+const publishersPath = path.join(app.getPath('userData'), 'ledger-publishers.json')
+
+// ledger alpha file goes here
+const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
+
+// ledger client state information goes here
+const statePath = path.join(app.getPath('userData'), 'ledger-state.json')
+
+// publisher synopsis state information goes here
+const synopsisPath = path.join(app.getPath('userData'), 'ledger-synopsis.json')
+
+// var LedgerClient
+// var client
 
 var LedgerPublisher
-// var LedgerClient
 var synopsis
+
 var currentLocation
 var currentTS
 
 module.exports.init = () => {
   console.log('Starting up ledger integration')
+
+  // determine whether we should be using the ledger client
   // LedgerClient = require('ledger-client')
+  fs.access(statePath, fs.FF_OK, (err) => {
+    if (!err) {
+      // client = ...
+      return
+    }
+
+    fs.access(alphaPath, fs.FF_OK, (err) => {
+      if (err) return
+
+      // client = ...
+    })
+  })
+
   LedgerPublisher = require('ledger-publisher')
   synopsis = new (LedgerPublisher.Synopsis)()
+  fs.readFile(synopsisPath, (err, data) => {
+    if (err) {
+      if (err.code !== 'ENOENT') console.log('synopsisPath read error: ' + err.toString())
+      return
+    }
+
+    try {
+      synopsis = new (LedgerPublisher.Synopsis)(data)
+    } catch (ex) {
+      console.log('synopsisPath parse error: ' + ex.toString())
+    }
+  })
 }
 
 module.exports.topPublishers = (n) => {
@@ -32,7 +72,18 @@ module.exports.topPublishers = (n) => {
 
 // This is a debug method and will NOT be used in product (hence the sync file save)
 var persistPublishers = () => {
-  fs.writeFileSync(storagePath, JSON.stringify(publishers, null, 2), 'utf-8')
+  fs.writeFileSync(publishersPath, JSON.stringify(publishers, null, 2), 'utf-8')
+}
+
+var busyP = false
+var persistSynopsis = () => {
+  if (busyP) return
+
+  fs.writeFile(synopsisPath, JSON.stringify(synopsis, null, 2), (err) => {
+    busyP = false
+
+    if (err) return console.log('synopsisPath write error: ' + err.toString())
+  })
 }
 
 // Messages are sent from the renderer process here for processing
@@ -43,7 +94,7 @@ if (ipc) {
   ipc.on(messages.LEDGER_VISIT, (e, location) => {
     var publisher
 
-    if ((!enabled) || (!location)) return
+    if (!location) return
 
     if (!locations[location]) {
       locations[location] = true
@@ -62,7 +113,7 @@ if (ipc) {
 
     if (location !== currentLocation && currentTS) {
       console.log('addVisit ' + currentLocation)
-      synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
+      if (synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)) persistSynopsis()
 
       console.log('top 10 publishers')
       console.log(synopsis.topN(10))
@@ -71,5 +122,3 @@ if (ipc) {
     currentTS = (new Date()).getTime()
   })
 }
-
-var enabled = true
