@@ -8,6 +8,7 @@ const electron = require('electron')
 const app = electron.app
 const fs = require('fs')
 const path = require('path')
+// const underscore = require('underscore')
 const messages = require('../js/constants/messages')
 
 // publisher mapping information for debugging goes to this file
@@ -22,6 +23,8 @@ const statePath = path.join(app.getPath('userData'), 'ledger-state.json')
 // publisher synopsis state information goes here
 const synopsisPath = path.join(app.getPath('userData'), 'ledger-synopsis.json')
 
+var enabledP
+
 // var LedgerClient
 // var client
 
@@ -34,24 +37,35 @@ var currentTS
 module.exports.init = () => {
   console.log('Starting up ledger integration')
 
+  // VERY temporary...
+  enabledP = true
+
   // determine whether we should be using the ledger client
   // LedgerClient = require('ledger-client')
   fs.access(statePath, fs.FF_OK, (err) => {
     if (!err) {
-      // client = ...
+      enabledP = true
+      console.log('found ' + statePath)
       return
     }
+    if (err.code !== 'ENOENT') console.log('statePath read error: ' + err.toString())
 
     fs.access(alphaPath, fs.FF_OK, (err) => {
-      if (err) return
+      if (err) {
+        if (err.code !== 'ENOENT') console.log('accessPath read error: ' + err.toString())
+        return
+      }
 
+      enabledP = true
+      console.log('found ' + alphaPath)
       // client = ...
     })
   })
 
   LedgerPublisher = require('ledger-publisher')
-  synopsis = new (LedgerPublisher.Synopsis)()
   fs.readFile(synopsisPath, (err, data) => {
+    synopsis = new (LedgerPublisher.Synopsis)()
+
     if (err) {
       if (err.code !== 'ENOENT') console.log('synopsisPath read error: ' + err.toString())
       return
@@ -65,24 +79,36 @@ module.exports.init = () => {
   })
 }
 
-module.exports.topPublishers = (n) => {
-  console.log('topPublishers')
-  return synopsis.topN(n)
+var syncP = {}
+var syncWriter = (path, data, callback) => {
+  if (syncP[path]) return
+  syncP[path] = true
+
+  fs.writeFile(path, data, (err) => {
+    syncP[path] = false
+
+    if (err) console.log('write error: ' + err.toString())
+
+    callback(err)
+  })
 }
 
-// This is a debug method and will NOT be used in product (hence the sync file save)
 var persistPublishers = () => {
-  fs.writeFileSync(publishersPath, JSON.stringify(publishers, null, 2), 'utf-8')
+  syncWriter(publishersPath, JSON.stringify(publishers, null, 2), () => {
+/* TBD: write HTML file
+
+    var mappings = {}
+
+    underscore.keys(publishers).sort().forEach((publisher) => { mappings[publisher] = publishers[publisher] })
+ */
+  })
 }
 
-var busyP = false
 var persistSynopsis = () => {
-  if (busyP) return
+  syncWriter(synopsisPath, JSON.stringify(synopsis, null, 2), () => {
+/* TBD: write HTML file
 
-  fs.writeFile(synopsisPath, JSON.stringify(synopsis, null, 2), (err) => {
-    busyP = false
-
-    if (err) return console.log('synopsisPath write error: ' + err.toString())
+ */
   })
 }
 
@@ -94,7 +120,7 @@ if (ipc) {
   ipc.on(messages.LEDGER_VISIT, (e, location) => {
     var publisher
 
-    if (!location) return
+    if ((!enabledP) || (!synopsis) || (!location)) return
 
     if (!locations[location]) {
       locations[location] = true
