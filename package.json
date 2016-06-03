@@ -76,7 +76,7 @@
     "immutablepatch": "^0.2.2",
     "keytar": "^3.0.0",
     "ledger-client": "https://github.com/brave/ledger-client.git",
-    "ledger-publisher": "^0.8.0",
+    "ledger-publisher": "^0.8.1",
     "lru_cache": "^1.0.0",
     "react": "^15.0.1",
     "react-dom": "^15.0.1",

@@ -17,7 +17,7 @@ const getSetting = require('../settings').getSetting
 const importFromHTML = require('../lib/importer').importFromHTML
 const UrlUtil = require('../lib/urlutil')
 const urlParse = require('url').parse
-const ledger = require('../../app/ledger')
+const ledgerInterop = require('../ledgerInterop')
 
 const { l10nErrorText } = require('../lib/errorUtil')
 const { aboutUrls, getSourceAboutUrl, isIntermediateAboutPage } = require('../lib/appUrlUtil')
@@ -174,7 +174,9 @@ const doAction = (action) => {
         // initiated navigation (bookmarks, etc...)
         updateNavBarInput(action.location, frameStatePath(action.key))
       }
-      console.log(action.location)
+
+      ledgerInterop.visit(action.location)
+
       break
     case WindowConstants.WINDOW_SET_NAVIGATED:
       action.location = action.location.trim()
@@ -347,8 +349,11 @@ const doAction = (action) => {
 
       // Ledger integration
       var loc = windowState.toJS().frames.filter((frame) => frame.key === action.frameProps.get('key'))[0].location
-      console.log(loc)
-      console.log(ledger.visit(loc))
+      if (loc) {
+        ledgerInterop.visit(loc)
+      } else {
+        console.log("Failed to determine location from frame. (Shouldn't happen)")
+      }
 
       updateTabPageIndex(action.frameProps)
       break
