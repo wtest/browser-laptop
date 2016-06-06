@@ -336,8 +336,76 @@ class SecurityTab extends ImmutableComponent {
 
 class BraveryTab extends ImmutableComponent {
   render () {
-    return <div>
-      Bravery settings coming soon
+    return <div id='braveryContainer'>
+      <h2>Top Sites Recipients</h2>
+      <table>
+        <tbody>
+          <tr>
+            <td>Rank</td>
+            <td>Site</td>
+            <td>Views</td>
+            <td>Time</td><td>Spent</td>
+            <td>Adjustment</td>
+            <td>&#37;</td>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>facebook.com</td>
+            <td>7</td>
+            <td>3m</td><td>0s</td>
+            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td>45</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>wsj.com</td>
+            <td>3</td>
+            <td></td><td>27s</td>
+            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td>14</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>therichest.com</td>
+            <td>3</td>
+            <td>2m</td><td>57s</td>
+            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td>13</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>macsales.com</td>
+            <td>4</td>
+            <td></td><td>51s</td>
+            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td>9</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>boingboing.net</td>
+            <td>1</td>
+            <td></td><td>40s</td>
+            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td>8</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>foxnews.com</td>
+            <td>1</td>
+            <td></td><td>16s</td>
+            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td>6</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>steliasmelkite.org</td>
+            <td>1</td>
+            <td></td><td>6s</td>
+            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td>5</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   }
 }
@@ -419,9 +487,9 @@ class TopBar extends ImmutableComponent {
         onClick={this.props.changeTab.bind(null, preferenceTabs.SECURITY)}
         selected={this.props.preferenceTab === preferenceTabs.SECURITY}
       />
-      <TopBarButton onClick={this.props.changeTab.bind(null, preferenceTabs.BRAVERY)}
+      <TopBarButton icon='fa-lock'
         dataL10nId='bravery'
-        className='notImplemented'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.BRAVERY)}
         selected={this.props.preferenceTab === preferenceTabs.BRAVERY}
       />
       <HelpfulHints hintNumber={this.props.hintNumber} refreshHint={this.props.refreshHint} />

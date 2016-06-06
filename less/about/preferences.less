@@ -226,3 +226,72 @@ input[type="checkbox"][disabled] {
   color: @braveOrange;
   padding: 3px;
 }
+
+#braveryContainer {
+
+  h2 {
+    color: @braveOrange;
+    font-weight: 200;
+    font-size: 1.25em;
+    margin-bottom: 2em;
+  }
+
+  & > table,
+  & > table tbody {
+    width: 80%;
+    margin: 0 auto;
+  }
+
+  tr {
+    height: 50px;
+
+    td {
+      color: @mediumGray;
+      -webkit-font-smoothing: antialiased;
+      text-align: right;
+      width: 8%;
+
+      &:nth-of-type(1),
+      &:nth-of-type(2) {
+        text-align: left;
+      }
+
+      &:nth-of-type(2) {
+        width: 20%;
+      }
+
+      &:nth-of-type(5) {
+        text-align: left;
+      }
+      input[type='range'] {
+        -webkit-appearance: none;
+        width: 80%;
+        margin: 0 0 0 20%;
+        outline: none;
+
+        &::-webkit-slider-runnable-track {
+          -webkit-appearance: none;
+          background: @gray30;
+          border-radius: 1000px;
+          height: 1em;
+        }
+
+        &::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          background: linear-gradient(to bottom, @braveOrange, @braveDarkOrange);
+          width: 1em;
+          height: 1em;
+          border-radius: 50%;
+          box-shadow: 0 0 6px @black25;
+          cursor: pointer;
+        }
+      }
+    }
+
+    &:first-of-type {
+      td {
+        color: @darkGray;
+      }
+    }
+  }
+}
