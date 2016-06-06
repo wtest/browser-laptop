@@ -116,36 +116,40 @@ var persistSynopsis = () => {
 const ipc = require('electron').ipcMain
 var locations = {}
 var publishers = {}
-if (ipc) {
-  ipc.on(messages.LEDGER_VISIT, (e, location) => {
-    var publisher
 
-    if ((!enabledP) || (!synopsis) || (!location)) return
+module.exports.handleLedgerVisit = (e, location) => {
+  var publisher
 
-    console.log('\n' + location + ': new=' + (!locations[location]))
-    if (!locations[location]) {
-      locations[location] = true
+  if ((!enabledP) || (!synopsis) || (!location)) return
 
-      try {
-        publisher = LedgerPublisher.getPublisher(location)
-        if (publisher) {
-          if (!publishers[publisher]) publishers[publisher] = []
-          publishers[publisher].push(location)
-          persistPublishers()
-        }
-      } catch (ex) {
-        console.log('getPublisher error: ' + ex.toString())
+  console.log('\n' + location + ': new=' + (!locations[location]))
+  if (!locations[location]) {
+    locations[location] = true
+
+    try {
+      publisher = LedgerPublisher.getPublisher(location)
+      if (publisher) {
+        if (!publishers[publisher]) publishers[publisher] = []
+        publishers[publisher].push(location)
+        persistPublishers()
       }
+    } catch (ex) {
+      console.log('getPublisher error: ' + ex.toString())
     }
+  }
 
-    if (location !== currentLocation && currentTS) {
-      console.log('addVisit ' + currentLocation)
-      if (synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)) persistSynopsis()
+  // If the location has changed and we have a previous timestamp
+  if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
+    console.log('addVisit ' + currentLocation)
+    if (synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)) persistSynopsis()
+    console.log(synopsis.topN(10))
+  }
+  // record the new current location and timestamp
+  currentLocation = location
+  currentTS = (new Date()).getTime()
+}
 
-      console.log('top 10 publishers')
-      console.log(synopsis.topN(10))
-    }
-    currentLocation = location
-    currentTS = (new Date()).getTime()
-  })
+// If we are in the main process
+if (ipc) {
+  ipc.on(messages.LEDGER_VISIT, module.exports.handleLedgerVisit)
 }

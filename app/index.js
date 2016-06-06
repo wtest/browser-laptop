@@ -225,6 +225,10 @@ app.on('ready', () => {
       return
     }
 
+    // When the browser is closing we need to send a signal
+    // to record the currently active location in the ledger
+    ledger.handleLedgerVisit(null, 'NOOP')
+
     e.preventDefault()
 
     initiateSessionStateSave(true)
