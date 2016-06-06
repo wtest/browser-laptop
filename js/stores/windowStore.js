@@ -175,6 +175,7 @@ const doAction = (action) => {
         updateNavBarInput(action.location, frameStatePath(action.key))
       }
 
+      // Record visit in the ledger
       ledgerInterop.visit(action.location)
 
       break
@@ -183,6 +184,9 @@ const doAction = (action) => {
       // For about: URLs, make sure we store the URL as about:something
       // and not what we map to.
       action.location = getSourceAboutUrl(action.location) || action.location
+
+      // Record visit in the ledger
+      ledgerInterop.visit(action.location)
 
       if (UrlUtil.isURL(action.location)) {
         action.location = UrlUtil.getUrlFromInput(action.location)
@@ -350,6 +354,7 @@ const doAction = (action) => {
       // Ledger integration
       var loc = windowState.toJS().frames.filter((frame) => frame.key === action.frameProps.get('key'))[0].location
       if (loc) {
+        // Record visit in the ledger
         ledgerInterop.visit(loc)
       } else {
         console.log("Failed to determine location from frame. (Shouldn't happen)")
