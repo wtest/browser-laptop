@@ -241,8 +241,12 @@ input[type="checkbox"][disabled] {
 
   & > table,
   & > table tbody {
-    width: 80%;
+    background: @lightGray;
+    border: none;
+    padding: 50px;
     margin: 0 auto;
+    width: 80%;
+    border-radius: @bigBorderRadius;
   }
 
   tr {
@@ -267,6 +271,7 @@ input[type="checkbox"][disabled] {
         text-align: left;
       }
       input[type='range'] {
+        background: transparent;
         -webkit-appearance: none;
         width: 80%;
         margin: 0 0 0 20%;
