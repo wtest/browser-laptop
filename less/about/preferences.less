@@ -227,7 +227,7 @@ input[type="checkbox"][disabled] {
   padding: 3px;
 }
 
-#braveryContainer {
+#ledgerContainer {
 
   h2 {
     color: @braveOrange;
@@ -249,6 +249,18 @@ input[type="checkbox"][disabled] {
   tr {
     height: 50px;
 
+    th {
+      color: @darkGray;
+      cursor: pointer;
+      text-align: right;
+      font-weight: 200;
+
+      &:nth-of-type(1),
+      &:nth-of-type(2) {
+        text-align: left;
+      }
+    }
+
     td {
       color: @mediumGray;
       -webkit-font-smoothing: antialiased;
@@ -264,9 +276,6 @@ input[type="checkbox"][disabled] {
         width: 20%;
       }
 
-      &:nth-of-type(5) {
-        text-align: left;
-      }
       input[type='range'] {
         background: transparent;
         -webkit-appearance: none;
@@ -290,12 +299,6 @@ input[type="checkbox"][disabled] {
           box-shadow: 0 0 6px @black25;
           cursor: pointer;
         }
-      }
-    }
-
-    &:first-of-type {
-      td {
-        color: @darkGray;
       }
     }
   }

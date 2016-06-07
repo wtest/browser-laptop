@@ -13,6 +13,7 @@ const messages = require('../constants/messages')
 const settings = require('../constants/settings')
 const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
+const tableSort = require('tablesort')
 
 const adblock = appConfig.resourceNames.ADBLOCK
 const cookieblock = appConfig.resourceNames.COOKIEBLOCK
@@ -334,78 +335,148 @@ class SecurityTab extends ImmutableComponent {
   }
 }
 
+class RecipientTableItem extends ImmutableComponent {
+  getFormattedViews () {
+    var v = this.props.views << 0
+    if (v > 999) {
+      return ('>1k')
+    }
+    if (v < 100) {
+      v = ('0' + v)
+    }
+    if (v < 10) {
+      v = ('0' + v)
+    }
+    return v
+  }
+  getFormattedPercentage () {
+    var p = this.props.percentage << 0
+    return (p < 10 ? ('0' + p) : p)
+  }
+  getFormattedTime () {
+    var m = this.props.minutesSpent << 0
+    var s = this.props.secondsSpent << 0
+    if (m > 59) {
+      return ('>1h')
+    }
+    if (m < 10) {
+      m = ('0' + m)
+    }
+    if (s < 10) {
+      s = ('0' + s)
+    }
+    return (m + 'm ' + s + 's')
+  }
+  render () {
+    return <tr>
+      <td>{this.props.rank}</td>
+      <td>{this.props.site}</td>
+      <td>{this.getFormattedViews()}</td>
+      <td>{this.getFormattedTime()}</td>
+      <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
+      <td>{this.getFormattedPercentage()}</td>
+    </tr>
+  }
+}
+
+class BraveryLedger extends ImmutableComponent {
+  componentDidMount (event) {
+    return tableSort(document.getElementById('recipientTable'))
+  }
+  render () {
+    var rows = []
+    for (let i = 0; i < this.props.data.length; i++) {
+      rows[i] = <RecipientTableItem {...this.props.data[i]} />
+    }
+    return <div id='ledgerContainer'>
+      <h2>Top Sites Recipients</h2>
+      <table id='recipientTable'>
+        <tbody>
+          <tr className='no-sort'>
+            <th>Rank</th>
+            <th>Site</th>
+            <th data-sort-method='number'>Views</th>
+            <th>Time Spent</th>
+            <th className='notImplemented'>Adjustment</th>
+            <th>&#37;</th>
+          </tr>
+          {rows}
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+BraveryLedger.propTypes = {
+  data: React.PropTypes.array.isRequired
+}
+
+// todo: replace `defaultProps.data` with real data
+BraveryLedger.defaultProps = {
+  data: [
+    {
+      rank: 1,
+      site: 'facebook.com',
+      views: 27,
+      minutesSpent: 3,
+      secondsSpent: 0,
+      percentage: 45
+    },
+    {
+      rank: 2,
+      site: 'wsj.com',
+      views: 3,
+      minutesSpent: 31,
+      secondsSpent: 27,
+      percentage: 14
+    },
+    {
+      rank: 3,
+      site: 'therichest.com',
+      views: 136,
+      minutesSpent: 2,
+      secondsSpent: 57,
+      percentage: 13
+    },
+    {
+      rank: 4,
+      site: 'macsales.com',
+      views: 4,
+      minutesSpent: 0,
+      secondsSpent: 51,
+      percentage: 9
+    },
+    {
+      rank: 5,
+      site: 'boingboing.net',
+      views: 1048,
+      minutesSpent: 0,
+      secondsSpent: 40,
+      percentage: 8
+    },
+    {
+      rank: 6,
+      site: 'foxnews.com',
+      views: 1,
+      minutesSpent: 0,
+      secondsSpent: 16,
+      percentage: 6
+    },
+    {
+      rank: 7,
+      site: 'steliasmelkite.org',
+      views: 10914,
+      minutesSpent: 0,
+      secondsSpent: 6,
+      percentage: 5
+    }
+  ]
+}
+
 class BraveryTab extends ImmutableComponent {
   render () {
     return <div id='braveryContainer'>
-      <h2>Top Sites Recipients</h2>
-      <table>
-        <tbody>
-          <tr>
-            <td>Rank</td>
-            <td>Site</td>
-            <td>Views</td>
-            <td>Time</td><td>Spent</td>
-            <td className='notImplemented'>Adjustment</td>
-            <td>&#37;</td>
-          </tr>
-          <tr>
-            <td>1</td>
-            <td>facebook.com</td>
-            <td>7</td>
-            <td>3m</td><td>0s</td>
-            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-            <td>45</td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td>wsj.com</td>
-            <td>3</td>
-            <td></td><td>27s</td>
-            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-            <td>14</td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td>therichest.com</td>
-            <td>3</td>
-            <td>2m</td><td>57s</td>
-            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-            <td>13</td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td>macsales.com</td>
-            <td>4</td>
-            <td></td><td>51s</td>
-            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-            <td>9</td>
-          </tr>
-          <tr>
-            <td>5</td>
-            <td>boingboing.net</td>
-            <td>1</td>
-            <td></td><td>40s</td>
-            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-            <td>8</td>
-          </tr>
-          <tr>
-            <td>6</td>
-            <td>foxnews.com</td>
-            <td>1</td>
-            <td></td><td>16s</td>
-            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-            <td>6</td>
-          </tr>
-          <tr>
-            <td>7</td>
-            <td>steliasmelkite.org</td>
-            <td>1</td>
-            <td></td><td>6s</td>
-            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-            <td>5</td>
-          </tr>
-        </tbody>
-      </table>
+      <BraveryLedger />
     </div>
   }
 }
