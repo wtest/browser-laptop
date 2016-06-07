@@ -339,6 +339,7 @@ class BraveryShields extends ImmutableComponent {
   render () {
     return <div id='shieldsContainer' className='selected'>
       <h2>Shields</h2>
+      <PrivacyTab settings={this.props.settings} siteSettings={this.props.siteSettings} braveryDefaults={this.props.braveryDefaults} onChangeSetting={this.onChangeSetting} />
     </div>
   }
 }
@@ -503,7 +504,7 @@ class BraveryTab extends ImmutableComponent {
         <div onClick={this.navigate} data-view='syncContainer'>Sync</div>
         <div onClick={this.navigate} data-view='intentMapContainer'>Intent Map</div>
       </div>
-      <BraveryShields />
+      <BraveryShields settings={this.props.settings} siteSettings={this.props.siteSettings} braveryDefaults={this.props.braveryDefaults} onChangeSetting={this.onChangeSetting} />
       <BraveryLedger />
       <BraverySync />
       <BraveryIntentMap />
@@ -687,7 +688,7 @@ class AboutPreferences extends React.Component {
         tab = <SecurityTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.BRAVERY:
-        tab = <BraveryTab settings={settings} onChangeSetting={this.onChangeSetting} />
+        tab = <BraveryTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
         break
     }
     return <div>
