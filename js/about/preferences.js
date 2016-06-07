@@ -335,7 +335,7 @@ class SecurityTab extends ImmutableComponent {
   }
 }
 
-class RecipientTableItem extends ImmutableComponent {
+class BraveryLedgerItem extends ImmutableComponent {
   getFormattedViews () {
     var v = this.props.views << 0
     if (v > 999) {
@@ -386,7 +386,7 @@ class BraveryLedger extends ImmutableComponent {
   render () {
     var rows = []
     for (let i = 0; i < this.props.data.length; i++) {
-      rows[i] = <RecipientTableItem {...this.props.data[i]} />
+      rows[i] = <BraveryLedgerItem {...this.props.data[i]} />
     }
     return <div id='ledgerContainer'>
       <h2>Top Sites Recipients</h2>
