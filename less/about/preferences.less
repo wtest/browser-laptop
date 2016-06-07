@@ -227,6 +227,43 @@ input[type="checkbox"][disabled] {
   padding: 3px;
 }
 
+#shieldsContainer,
+#ledgerContainer,
+#syncContainer,
+#intentMapContainer {
+  display: none;
+}
+
+#shieldsContainer.selected,
+#ledgerContainer.selected,
+#syncContainer.selected,
+#intentMapContainer.selected {
+  display: block;
+}
+
+.segmentedControl {
+  width: 50%;
+  border: solid 1px @braveOrange;
+  border-radius: @borderRadius;
+  margin: 0 auto 20px;
+  height: 2em;
+}
+
+.segmentedControl > div {
+  color: @braveOrange;
+  text-align: center;
+  display: inline-block;
+  width: 25%;
+  height: 2em;
+  line-height: 2em;
+  cursor: pointer;
+}
+
+.segmentedControl > div.selected {
+  color: white;
+  background: @braveOrange;
+}
+
 #ledgerContainer {
 
   h2 {

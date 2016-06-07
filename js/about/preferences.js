@@ -335,19 +335,22 @@ class SecurityTab extends ImmutableComponent {
   }
 }
 
+class BraveryShields extends ImmutableComponent {
+  render () {
+    return <div id='shieldsContainer' className='selected'>
+      <h2>Shields</h2>
+    </div>
+  }
+}
+
 class BraveryLedgerItem extends ImmutableComponent {
   getFormattedViews () {
     var v = this.props.views << 0
     if (v > 999) {
       return ('>1k')
     }
-    if (v < 100) {
-      v = ('0' + v)
-    }
-    if (v < 10) {
-      v = ('0' + v)
-    }
-    return v
+    v = (v < 100 ? ('0' + v) : v)
+    return (v < 10 ? ('0' + v) : v)
   }
   getFormattedPercentage () {
     var p = this.props.percentage << 0
@@ -359,13 +362,7 @@ class BraveryLedgerItem extends ImmutableComponent {
     if (m > 59) {
       return ('>1h')
     }
-    if (m < 10) {
-      m = ('0' + m)
-    }
-    if (s < 10) {
-      s = ('0' + s)
-    }
-    return (m + 'm ' + s + 's')
+    return (((m < 10 ? ('0' + m) : m) + 'm ') + ((s < 10 ? ('0' + s) : s) + 's '))
   }
   render () {
     return <tr>
@@ -473,10 +470,43 @@ BraveryLedger.defaultProps = {
   ]
 }
 
+class BraverySync extends ImmutableComponent {
+  render () {
+    return <div id='syncContainer'>
+      <h2>Sync</h2>
+    </div>
+  }
+}
+
+class BraveryIntentMap extends ImmutableComponent {
+  render () {
+    return <div id='intentMapContainer'>
+      <h2>Intent Map</h2>
+    </div>
+  }
+}
+
 class BraveryTab extends ImmutableComponent {
+  navigate (event) {
+    [].forEach.call(document.getElementById('braveryNav').children, function (e, i) {
+      e.removeAttribute('class')
+      document.getElementById(e.dataset.view).removeAttribute('class')
+    })
+    event.target.setAttribute('class', 'selected')
+    document.getElementById(event.target.dataset.view).setAttribute('class', 'selected')
+  }
   render () {
     return <div id='braveryContainer'>
+      <div className='segmentedControl' id='braveryNav'>
+        <div className='selected' onClick={this.navigate} data-view='shieldsContainer'>Shields</div>
+        <div onClick={this.navigate} data-view='ledgerContainer'>Ledger</div>
+        <div onClick={this.navigate} data-view='syncContainer'>Sync</div>
+        <div onClick={this.navigate} data-view='intentMapContainer'>Intent Map</div>
+      </div>
+      <BraveryShields />
       <BraveryLedger />
+      <BraverySync />
+      <BraveryIntentMap />
     </div>
   }
 }
