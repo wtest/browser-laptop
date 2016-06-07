@@ -345,7 +345,7 @@ class BraveryTab extends ImmutableComponent {
             <td>Site</td>
             <td>Views</td>
             <td>Time</td><td>Spent</td>
-            <td>Adjustment</td>
+            <td className='notImplemented'>Adjustment</td>
             <td>&#37;</td>
           </tr>
           <tr>
@@ -353,7 +353,7 @@ class BraveryTab extends ImmutableComponent {
             <td>facebook.com</td>
             <td>7</td>
             <td>3m</td><td>0s</td>
-            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
             <td>45</td>
           </tr>
           <tr>
@@ -361,7 +361,7 @@ class BraveryTab extends ImmutableComponent {
             <td>wsj.com</td>
             <td>3</td>
             <td></td><td>27s</td>
-            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
             <td>14</td>
           </tr>
           <tr>
@@ -369,7 +369,7 @@ class BraveryTab extends ImmutableComponent {
             <td>therichest.com</td>
             <td>3</td>
             <td>2m</td><td>57s</td>
-            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
             <td>13</td>
           </tr>
           <tr>
@@ -377,7 +377,7 @@ class BraveryTab extends ImmutableComponent {
             <td>macsales.com</td>
             <td>4</td>
             <td></td><td>51s</td>
-            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
             <td>9</td>
           </tr>
           <tr>
@@ -385,7 +385,7 @@ class BraveryTab extends ImmutableComponent {
             <td>boingboing.net</td>
             <td>1</td>
             <td></td><td>40s</td>
-            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
             <td>8</td>
           </tr>
           <tr>
@@ -393,7 +393,7 @@ class BraveryTab extends ImmutableComponent {
             <td>foxnews.com</td>
             <td>1</td>
             <td></td><td>16s</td>
-            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
             <td>6</td>
           </tr>
           <tr>
@@ -401,7 +401,7 @@ class BraveryTab extends ImmutableComponent {
             <td>steliasmelkite.org</td>
             <td>1</td>
             <td></td><td>6s</td>
-            <td><input type='range' name='points' min='0' max='10'></input></td>
+            <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
             <td>5</td>
           </tr>
         </tbody>
