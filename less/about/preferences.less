@@ -1,5 +1,10 @@
 @import "./common.less";
 
+strong, div, span, li, em, p, a {
+  font-weight: 200;
+  -webkit-font-smoothing: antialiased;
+}
+
 .notImplemented {
   display: none;
 }
@@ -24,7 +29,7 @@
       box-sizing: border-box;
       margin: 20px auto;
       padding-left: 20px;
-      color: @white60;
+      color: @white50;
       font-size: 0.9em;
       font-weight: 300;
     }
@@ -69,7 +74,7 @@
 }
 
 .helpfulHints {
-  color: @white60;
+  color: @white50;
   cursor: default;
   padding: 30px 0;
   margin-top: 20px;
@@ -81,11 +86,11 @@
     font-weight: normal;
     margin: 10px;
     * {
-      color: @white60;
+      color: @white50;
     }
   }
   > div {
-    color: @white60;
+    color: @white50;
     font-size: smaller;
     margin: 10px;
   }
@@ -93,14 +98,14 @@
     position: absolute;
     bottom: 0;
     a {
-      color: @white60;
+      color: @white50;
     }
     .loveToHear {
       color: initial;
       font-size: smaller;
       margin-top: 5px;
       margin-bottom: 30px;
-      color: @white60;
+      color: @white50;
     }
   }
   .hintsRefresh {
@@ -155,33 +160,51 @@ a {
 }
 
 .settingsList {
-  display: table;
   margin-bottom: 10px;
   width: 500px;
+
   .settingItem {
-    display: table-row;
     margin-bottom: 10px;
-    span {
-      text-align: right;
-      padding-right: 10px;
+
+    > * {
+      margin-bottom: 10px;
+      min-width: 160px;
+      line-height: 2em;
     }
+
+    span {
+      padding-right: 10px;
+      color: @braveOrange;
+      font-size: 1.25em;
+    }
+
     label {
       text-align: left;
     }
-    .checkboxContainer {
-      width: 100px;
-      input {
-        text-align: right;
-      }
+
+    > input,
+    > select {
+      display: block;
+      border-radius: @borderRadius;
+      height: 3em;
+      font-size: 0.9em;
+      padding: 10px;
+      margin: 10px;
+      border: none;
+      background: white;
+      color: @darkGray;
+      box-shadow: 0 0 5px @black50;
+      cursor: pointer;
+      outline: none;
     }
-    >input[type="number"] {
+
+    > input[type="number"] {
       width: 50px;
       min-width: 50px;
     }
-    >* {
-      display: table-cell;
-      margin-bottom: 10px;
-      min-width: 160px;
+
+    .checkboxContainer {
+      width: 100px;
     }
   }
 }
@@ -264,6 +287,10 @@ input[type="checkbox"][disabled] {
   background: @braveOrange;
 }
 
+#shieldsContainer {
+
+}
+
 #ledgerContainer {
 
   h2 {
@@ -322,7 +349,7 @@ input[type="checkbox"][disabled] {
 
         &::-webkit-slider-runnable-track {
           -webkit-appearance: none;
-          background: @gray30;
+          background: @gray25;
           border-radius: 1000px;
           height: 1em;
         }

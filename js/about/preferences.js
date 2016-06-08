@@ -338,7 +338,6 @@ class SecurityTab extends ImmutableComponent {
 class BraveryShields extends ImmutableComponent {
   render () {
     return <div id='shieldsContainer' className='selected'>
-      <h2>Shields</h2>
       <PrivacyTab settings={this.props.settings} siteSettings={this.props.siteSettings} braveryDefaults={this.props.braveryDefaults} onChangeSetting={this.onChangeSetting} />
     </div>
   }
@@ -475,6 +474,7 @@ class BraverySync extends ImmutableComponent {
   render () {
     return <div id='syncContainer'>
       <h2>Sync</h2>
+      <SyncTab />
     </div>
   }
 }
