@@ -501,8 +501,6 @@ class BraveryTab extends ImmutableComponent {
       <div className='segmentedControl' id='braveryNav'>
         <div className='selected' onClick={this.navigate} data-view='shieldsContainer'>Shields</div>
         <div onClick={this.navigate} data-view='ledgerContainer'>Ledger</div>
-        <div onClick={this.navigate} data-view='syncContainer'>Sync</div>
-        <div onClick={this.navigate} data-view='intentMapContainer'>Intent Map</div>
       </div>
       <BraveryShields settings={this.props.settings} siteSettings={this.props.siteSettings} braveryDefaults={this.props.braveryDefaults} onChangeSetting={this.onChangeSetting} />
       <BraveryLedger />
