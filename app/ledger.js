@@ -8,8 +8,10 @@ const electron = require('electron')
 const app = electron.app
 const fs = require('fs')
 const path = require('path')
-// const underscore = require('underscore')
+const underscore = require('underscore')
 const messages = require('../js/constants/messages')
+const Immutable = require('immutable')
+const appActions = require('../js/actions/appActions')
 
 // publisher mapping information for debugging goes to this file
 const publishersPath = path.join(app.getPath('userData'), 'ledger-publishers.json')
@@ -17,16 +19,24 @@ const publishersPath = path.join(app.getPath('userData'), 'ledger-publishers.jso
 // ledger alpha file goes here
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
 
+// ledger logging information goes here
+const logPath = path.join(app.getPath('userData'), 'ledger-log.json')
+
 // ledger client state information goes here
 const statePath = path.join(app.getPath('userData'), 'ledger-state.json')
 
 // publisher synopsis state information goes here
 const synopsisPath = path.join(app.getPath('userData'), 'ledger-synopsis.json')
 
-var enabledP
+var msecs = { day: 24 * 60 * 60 * 1000,
+             hour: 60 * 60 * 1000,
+             minute: 60 * 1000,
+             second: 1000
+          }
 
-// var LedgerClient
-// var client
+var client
+var topPublishersN = 10
+var nextPaymentPopup = underscore.now() + (6 * msecs.minute)
 
 var LedgerPublisher
 var synopsis
@@ -35,17 +45,36 @@ var currentLocation
 var currentTS
 
 module.exports.init = () => {
-  console.log('Starting up ledger integration')
+  var LedgerClient
 
-  // VERY temporary...
-  enabledP = true
+  var makeClient = (path, cb) => {
+    fs.readFile(path, (err, data) => {
+      var state
 
-  // determine whether we should be using the ledger client
-  // LedgerClient = require('ledger-client')
+      if (err) return console.log('read error: ' + err.toString())
+
+      try {
+        state = JSON.parse(data)
+        console.log('\nstarting up ledger-client integration')
+        cb(null, state)
+      } catch (ex) {
+        console.log(path + (state ? ' ledger' : ' parse') + ' error: ' + ex.toString())
+        cb(ex)
+      }
+    })
+  }
+
+  LedgerClient = require('ledger-client')
   fs.access(statePath, fs.FF_OK, (err) => {
     if (!err) {
-      enabledP = true
       console.log('found ' + statePath)
+
+      makeClient(statePath, (err, state) => {
+        if (err) return
+
+        client = LedgerClient(state.personaId, state.options, state)
+        client.sync(callback)
+      })
       return
     }
     if (err.code !== 'ENOENT') console.log('statePath read error: ' + err.toString())
@@ -56,14 +85,19 @@ module.exports.init = () => {
         return
       }
 
-      enabledP = true
       console.log('found ' + alphaPath)
-      // client = ...
+      makeClient(alphaPath, (err, alpha) => {
+        if (err) return
+
+        client = LedgerClient(alpha.client.personaId, alpha.client.options, null)
+        client.sync(callback)
+      })
     })
   })
 
   LedgerPublisher = require('ledger-publisher')
   fs.readFile(synopsisPath, (err, data) => {
+    console.log('\nstarting up ledger publisher integration')
     synopsis = new (LedgerPublisher.Synopsis)()
 
     if (err) {
@@ -80,21 +114,63 @@ module.exports.init = () => {
 }
 
 var syncP = {}
-var syncWriter = (path, data, callback) => {
+var syncWriter = (path, obj, options, cb) => {
   if (syncP[path]) return
   syncP[path] = true
 
-  fs.writeFile(path, data, (err) => {
+  if (typeof options === 'function') {
+    cb = options
+    options = null
+  }
+  options = underscore.defaults(options || {}, { encoding: 'utf8', mode: parseInt('644', 8) })
+
+  fs.writeFile(path, JSON.stringify(obj, null, 2), options, (err) => {
     syncP[path] = false
 
     if (err) console.log('write error: ' + err.toString())
 
-    callback(err)
+    cb(err)
   })
 }
 
+var callback = (err, result, delayTime) => {
+  var now
+  var entries = client.report()
+
+  console.log('\nledger-client callback: errP=' + (!!err) + ' resultP=' + (!!result) + ' delayTime=' + delayTime)
+
+  if (err) return console.log('ledger-client error: ' + err.toString() + '\n' + err.stack)
+
+  if (entries) syncWriter(logPath, entries, { flag: 'a' }, () => { })
+
+  if (!result) return run(delayTime)
+
+  if (result.thisPayment) {
+    console.log(JSON.stringify(result.thisPayment, null, 2))
+
+    now = underscore.now()
+    if (nextPaymentPopup <= now) {
+      nextPaymentPopup = now + (6 * msecs.hour)
+
+      appActions.newWindow(Immutable.fromJS({
+        location: result.thisPayment.paymentURL
+      }))
+    }
+  }
+
+  syncWriter(statePath, result, () => { run(delayTime) })
+}
+
+var run = (delayTime) => {
+  console.log('\nledger-client run: delayTime=' + delayTime)
+
+  if (delayTime > 0) return setTimeout(() => { if (client.sync(callback)) return run(0) }, delayTime)
+
+  if (client.isReadyToReconcile()) client.reconcile(synopsis.topN(topPublishersN), callback)
+}
+
 var persistPublishers = () => {
-  syncWriter(publishersPath, JSON.stringify(publishers, null, 2), () => {
+  syncWriter(publishersPath, publishers, () => {
 /* TBD: write HTML file
 
     var mappings = {}
@@ -105,10 +181,63 @@ var persistPublishers = () => {
 }
 
 var persistSynopsis = () => {
-  syncWriter(synopsisPath, JSON.stringify(synopsis, null, 2), () => {
-/* TBD: write HTML file
+  syncWriter(synopsisPath, synopsis, (err) => {
+    var i, data, diff, duration, n, results, total
 
- */
+    if (err) return
+
+    results = []
+    underscore.keys(synopsis.publishers).forEach(function (publisher) {
+      results.push(underscore.extend({ publisher: publisher }, underscore.omit(synopsis.publishers[publisher], 'window')))
+    }, synopsis)
+    results = underscore.sortBy(results, function (entry) { return -entry.score })
+
+    n = topPublishersN
+    if ((n > 0) && (results.length > n)) results = results.slice(0, n)
+    n = results.length
+
+    total = 0
+    for (i = 0; i < n; i++) { total += results[i].score }
+    if (total === 0) return
+
+    data = []
+    for (i = 0; i < n; i++) {
+      data[i] = { rank: i + 1,
+                     site: results[i].publisher, views: results[i].views,
+                     daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0,
+                     percentage: Math.round((results[i].score * 100) / total)
+                   }
+
+      duration = results[i].duration
+      if (duration >= msecs.day) {
+        data[i].daysSpent = Math.max(Math.round(duration / msecs.day), 1)
+      } else if (duration >= msecs.hour) {
+        data[i].hoursSpent = Math.max(Math.floor(duration / msecs.hour), 1)
+        data[i].minutesSpent = Math.round((duration % msecs.hour) / msecs.minute)
+      } else if (duration >= msecs.minute) {
+        data[i].minutesSpent = Math.max(Math.round(duration / msecs.minute), 1)
+        data[i].secondsSpent = Math.round((duration % msecs.minute) / msecs.second)
+      } else {
+        data[i].seconcsSpent = Math.max(Math.round(duration / msecs.second), 1)
+      }
+    }
+
+    diff = 100
+    for (i = 0; i < n; i++) diff -= data[i].percentage
+    if (diff > 0) {
+      data[0].percentage += diff
+    } else {
+      while (diff !== 0) {
+        for (i = 0; i < n; i++) {
+          if (data[i].percentage === 1) break
+          data[i].percentage--
+          diff++
+        }
+      }
+    }
+
+    // TBD: @aubrey
+    console.log('set BraveryLedger.defaultsProp.data=' + JSON.stringify(data, null, 2))
   })
 }
 
@@ -120,7 +249,7 @@ var publishers = {}
 module.exports.handleLedgerVisit = (e, location) => {
   var publisher
 
-  if ((!enabledP) || (!synopsis) || (!location)) return
+  if ((!synopsis) || (!location)) return
 
   console.log('\n' + location + ': new=' + (!locations[location]))
   if (!locations[location]) {
@@ -142,7 +271,7 @@ module.exports.handleLedgerVisit = (e, location) => {
   if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
     console.log('addVisit ' + currentLocation)
     if (synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)) persistSynopsis()
-    console.log(synopsis.topN(10))
+    console.log(synopsis.topN(topPublishersN))
   }
   // record the new current location and timestamp
   currentLocation = location
