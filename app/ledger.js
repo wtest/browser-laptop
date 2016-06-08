@@ -271,10 +271,8 @@ module.exports.handleStats = (event) => {
     }
   }
 
-  console.log(JSON.stringify(pct, null, 2))
   pct = foo(pct, 100)
   for (i = 0; i < n; i++) { data[i].percentage = pct[i] }
-  console.log(JSON.stringify(data, null, 2))
 
   event.returnValue = data
 }
