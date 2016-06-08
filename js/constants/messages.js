@@ -130,7 +130,9 @@ const messages = {
   // NoScript
   TEMPORARY_ALLOW_SCRIPTS: _, /** @arg {string} origin to allow scripts on */
   // Ledger
-  LEDGER_VISIT: _
+  LEDGER_VISIT: _,
+  LEDGER_STATS: _,
+  LEDGER_UPDATED: _
 }
 
 module.exports = mapValuesByKeys(messages)

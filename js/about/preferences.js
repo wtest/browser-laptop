@@ -408,7 +408,6 @@ BraveryLedger.propTypes = {
   data: React.PropTypes.array.isRequired
 }
 
-// todo: replace `defaultProps.data` with real data
 BraveryLedger.defaultProps = {
   data: [
     {
@@ -607,12 +606,16 @@ class AboutPreferences extends React.Component {
       languageCodes: window.languageCodes ? Immutable.fromJS(window.languageCodes) : Immutable.Map(),
       settings: window.initSettings ? Immutable.fromJS(window.initSettings) : Immutable.Map(),
       siteSettings: window.initSiteSettings ? Immutable.fromJS(window.initSiteSettings) : Immutable.Map(),
-      braveryDefaults: window.initBraveryDefaults ? Immutable.fromJS(window.initBraveryDefaults) : Immutable.Map()
+      braveryDefaults: window.initBraveryDefaults ? Immutable.fromJS(window.initBraveryDefaults) : Immutable.Map(),
+      ledger: []
     }
     window.addEventListener(messages.SETTINGS_UPDATED, (e) => {
       this.setState({
         settings: Immutable.fromJS(e.detail || {})
       })
+    })
+    window.addEventListener(messages.LEDGER_UPDATED, (e) => {
+      BraveryLedger.defaultProps.data = e.detail
     })
     window.addEventListener(messages.SITE_SETTINGS_UPDATED, (e) => {
       this.setState({

@@ -149,7 +149,20 @@ module.exports.handleLedgerVisit = (e, location) => {
   currentTS = (new Date()).getTime()
 }
 
+module.exports.handleStats = (event) => {
+  var idx = 1
+  var topPublishers = synopsis.topN(10).map((publisher) => {
+    // TODO perform transformations here (for viewing in about:preferences Bravery panel)
+    publisher.site = publisher.publisher
+    publisher.rank = idx++
+    return publisher
+  })
+
+  event.returnValue = topPublishers
+}
+
 // If we are in the main process
 if (ipc) {
   ipc.on(messages.LEDGER_VISIT, module.exports.handleLedgerVisit)
+  ipc.on(messages.LEDGER_STATS, module.exports.handleStats)
 }

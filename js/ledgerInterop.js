@@ -10,3 +10,8 @@ const messages = require('./constants/messages')
 module.exports.visit = (location) => {
   ipc.send(messages.LEDGER_VISIT, location)
 }
+
+// Retrieve the history from the main process
+module.exports.history = () => {
+  return ipc.sendSync(messages.LEDGER_STATS)
+}
