@@ -141,7 +141,7 @@ var callback = (err, result, delayTime) => {
 
   if (err) return console.log('ledger-client error: ' + err.toString() + '\n' + err.stack)
 
-  if (entries) syncWriter(logPath, entries, { flag: 'a' }, () => { })
+  if (entries) syncWriter(logPath, entries, { flag: 'a' }, () => {})
 
   if (!result) return run(delayTime)
 
@@ -181,64 +181,7 @@ var persistPublishers = () => {
 }
 
 var persistSynopsis = () => {
-  syncWriter(synopsisPath, synopsis, (err) => {
-    var i, data, diff, duration, n, results, total
-
-    if (err) return
-
-    results = []
-    underscore.keys(synopsis.publishers).forEach(function (publisher) {
-      results.push(underscore.extend({ publisher: publisher }, underscore.omit(synopsis.publishers[publisher], 'window')))
-    }, synopsis)
-    results = underscore.sortBy(results, function (entry) { return -entry.score })
-
-    n = topPublishersN
-    if ((n > 0) && (results.length > n)) results = results.slice(0, n)
-    n = results.length
-
-    total = 0
-    for (i = 0; i < n; i++) { total += results[i].score }
-    if (total === 0) return
-
-    data = []
-    for (i = 0; i < n; i++) {
-      data[i] = { rank: i + 1,
-                     site: results[i].publisher, views: results[i].views,
-                     daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0,
-                     percentage: Math.round((results[i].score * 100) / total)
-                   }
-
-      duration = results[i].duration
-      if (duration >= msecs.day) {
-        data[i].daysSpent = Math.max(Math.round(duration / msecs.day), 1)
-      } else if (duration >= msecs.hour) {
-        data[i].hoursSpent = Math.max(Math.floor(duration / msecs.hour), 1)
-        data[i].minutesSpent = Math.round((duration % msecs.hour) / msecs.minute)
-      } else if (duration >= msecs.minute) {
-        data[i].minutesSpent = Math.max(Math.round(duration / msecs.minute), 1)
-        data[i].secondsSpent = Math.round((duration % msecs.minute) / msecs.second)
-      } else {
-        data[i].seconcsSpent = Math.max(Math.round(duration / msecs.second), 1)
-      }
-    }
-
-    diff = 100
-    for (i = 0; i < n; i++) diff -= data[i].percentage
-    if (diff > 0) {
-      data[0].percentage += diff
-    } else {
-      while (diff !== 0) {
-        for (i = 0; i < n; i++) {
-          if (data[i].percentage === 1) break
-          data[i].percentage--
-          diff++
-        }
-      }
-    }
-
-    // TBD: @aubrey
-    console.log('set BraveryLedger.defaultsProp.data=' + JSON.stringify(data, null, 2))
-  })
+  syncWriter(synopsisPath, synopsis, () => {})
 }
 
 // Messages are sent from the renderer process here for processing
@@ -278,16 +221,62 @@ module.exports.handleLedgerVisit = (e, location) => {
   currentTS = (new Date()).getTime()
 }
 
-module.exports.handleStats = (event) => {
-  var idx = 1
-  var topPublishers = synopsis.topN(10).map((publisher) => {
-    // TODO perform transformations here (for viewing in about:preferences Bravery panel)
-    publisher.site = publisher.publisher
-    publisher.rank = idx++
-    return publisher
-  })
+// courtesy of https://stackoverflow.com/questions/13483430/how-to-make-rounded-percentages-add-up-to-100#13485888
+var foo = (l, target) => {
+  var off = target - underscore.reduce(l, (acc, x) => { return acc + Math.round(x) }, 0)
 
-  event.returnValue = topPublishers
+  return underscore.chain(l)
+                   .sortBy((x) => { return Math.round(x) - x })
+                   .map((x, i) => { return Math.round(x) + (off > i) - (i >= (l.length + off)) })
+                   .value()
+}
+
+module.exports.handleStats = (event) => {
+  var i, data, duration, n, pct, results, total
+
+  results = []
+  underscore.keys(synopsis.publishers).forEach((publisher) => {
+    results.push(underscore.extend({ publisher: publisher }, underscore.omit(synopsis.publishers[publisher], 'window')))
+  }, synopsis)
+  results = underscore.sortBy(results, (entry) => { return -entry.score })
+
+  n = topPublishersN
+  if ((n > 0) && (results.length > n)) results = results.slice(0, n)
+  n = results.length
+
+  total = 0
+  for (i = 0; i < n; i++) { total += results[i].score }
+  if (total === 0) return
+
+  data = []
+  pct = []
+  for (i = 0; i < n; i++) {
+    data[i] = { rank: i + 1,
+                   site: results[i].publisher, views: results[i].visits,
+                   daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0
+                 }
+    pct[i] = Math.round((results[i].score * 100) / total)
+
+    duration = results[i].duration
+    if (duration >= msecs.day) {
+      data[i].daysSpent = Math.max(Math.round(duration / msecs.day), 1)
+    } else if (duration >= msecs.hour) {
+      data[i].hoursSpent = Math.max(Math.floor(duration / msecs.hour), 1)
+      data[i].minutesSpent = Math.round((duration % msecs.hour) / msecs.minute)
+    } else if (duration >= msecs.minute) {
+      data[i].minutesSpent = Math.max(Math.round(duration / msecs.minute), 1)
+      data[i].secondsSpent = Math.round((duration % msecs.minute) / msecs.second)
+    } else {
+      data[i].seconcsSpent = Math.max(Math.round(duration / msecs.second), 1)
+    }
+  }
+
+  console.log(JSON.stringify(pct, null, 2))
+  pct = foo(pct, 100)
+  for (i = 0; i < n; i++) { data[i].percentage = pct[i] }
+  console.log(JSON.stringify(data, null, 2))
+
+  event.returnValue = data
 }
 
 // If we are in the main process
