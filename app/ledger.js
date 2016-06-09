@@ -151,7 +151,8 @@ var callback = (err, result, delayTime) => {
     if (nextPaymentPopup <= now) {
       nextPaymentPopup = now + (6 * msecs.hour)
 
-      commonMenu.sendToFocusedWindow(electron.BrowserWindow.getFocusedWindow(), [messages.SHORTCUT_NEW_FRAME, result.thisPayment.paymentURL])
+      commonMenu.sendToFocusedWindow(electron.BrowserWindow.getFocusedWindow(),
+                                     [ messages.SHORTCUT_NEW_FRAME, result.thisPayment.paymentURL ])
     }
   }
 
@@ -235,7 +236,7 @@ var foo = (l, target) => {
 }
 
 module.exports.handleGeneralCommunication = (event) => {
-  var i, data, duration, n, pct, results, total
+  var i, data, duration, method, n, pct, results, total
 
   results = []
   underscore.keys(synopsis.publishers).forEach((publisher) => {
@@ -258,6 +259,10 @@ module.exports.handleGeneralCommunication = (event) => {
                    site: results[i].publisher, views: results[i].visits,
                    daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0
                  }
+    if (results[i].method) {
+      method = results[i].method
+      underscore.extend(data[i], { faviconURL: method + '://favicon.ico', publisherURL: method + '://' + results[i].publisher })
+    }
     pct[i] = Math.round((results[i].score * 100) / total)
 
     duration = results[i].duration
@@ -277,11 +282,10 @@ module.exports.handleGeneralCommunication = (event) => {
   pct = foo(pct, 100)
   for (i = 0; i < n; i++) { data[i].percentage = pct[i] }
 
-  // TODO fill in required info
   event.returnValue = {
-    publishers: data,
-    enabled: false,
-    synopsis: null,
+    synopsis: data,
+    publishers: null,
+    enabled: !!client,
     logs: null
   }
 }

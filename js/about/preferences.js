@@ -540,7 +540,7 @@ class AboutPreferences extends React.Component {
       })
     })
     window.addEventListener(messages.LEDGER_UPDATED, (e) => {
-      PaymentsTab.defaultProps.data = e.detail.publishers
+      PaymentsTab.defaultProps.data = e.detail.synopsis
     })
     window.addEventListener(messages.SITE_SETTINGS_UPDATED, (e) => {
       this.setState({
