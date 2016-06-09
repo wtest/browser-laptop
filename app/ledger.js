@@ -12,25 +12,19 @@ const underscore = require('underscore')
 const messages = require('../js/constants/messages')
 const commonMenu = require('../js/commonMenu')
 
-// publisher mapping information for debugging goes to this file
-const publishersPath = path.join(app.getPath('userData'), 'ledger-publishers.json')
-
 // ledger alpha file goes here
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
 
-// ledger logging information goes here
-const logPath = path.join(app.getPath('userData'), 'ledger-log.json')
-
-// ledger client state information goes here
+// TBD: move this into appStore.getState().get(‘ledger.client’)
 const statePath = path.join(app.getPath('userData'), 'ledger-state.json')
 
-// publisher synopsis state information goes here
+// TBD: move this into appStore.getState().get(‘publishers.synopsis’)
 const synopsisPath = path.join(app.getPath('userData'), 'ledger-synopsis.json')
 
 var msecs = { day: 24 * 60 * 60 * 1000,
-             hour: 60 * 60 * 1000,
-             minute: 60 * 1000,
-             second: 1000
+              hour: 60 * 60 * 1000,
+              minute: 60 * 1000,
+              second: 1000
           }
 
 var client
@@ -140,7 +134,7 @@ var callback = (err, result, delayTime) => {
 
   if (err) return console.log('ledger-client error: ' + err.toString() + '\n' + err.stack)
 
-  if (entries) syncWriter(logPath, entries, { flag: 'a' }, () => {})
+  if (entries) logNormalizer(entries)
 
   if (!result) return run(delayTime)
 
@@ -167,75 +161,10 @@ var run = (delayTime) => {
   if (client.isReadyToReconcile()) client.reconcile(synopsis.topN(topPublishersN), callback)
 }
 
-var persistPublishers = () => {
-  syncWriter(publishersPath, publishers, () => {
-/* TBD: write HTML file
-
-    var mappings = {}
-
-    underscore.keys(publishers).sort().forEach((publisher) => { mappings[publisher] = publishers[publisher] })
- */
-  })
-}
-
-var persistSynopsis = () => {
-  syncWriter(synopsisPath, synopsis, () => {})
-}
-
-// Messages are sent from the renderer process here for processing
-const ipc = require('electron').ipcMain
 var locations = {}
 var publishers = {}
 
-module.exports.handleLedgerVisit = (e, location) => {
-  var i, publisher
-
-  if ((!synopsis) || (!location)) return
-
-  console.log('\n' + location + ': new=' + (!locations[location]))
-  if (!locations[location]) {
-    locations[location] = true
-
-    try {
-      publisher = LedgerPublisher.getPublisher(location)
-      if (publisher) {
-        if (!publishers[publisher]) publishers[publisher] = []
-        publishers[publisher].push(location)
-        persistPublishers()
-      }
-    } catch (ex) {
-      console.log('getPublisher error: ' + ex.toString())
-    }
-  }
-
-  // If the location has changed and we have a previous timestamp
-  if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
-    console.log('addVisit ' + currentLocation)
-    publisher = synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
-    i = location.indexOf(':/')
-    if ((i > 0) && (publisher) && (!synopsis.publishers[publisher].method)) {
-      synopsis.publishers[publisher].method = location.substr(0, i)
-    }
-
-    persistSynopsis()
-    console.log(synopsis.topN(topPublishersN))
-  }
-  // record the new current location and timestamp
-  currentLocation = location
-  currentTS = (new Date()).getTime()
-}
-
-// courtesy of https://stackoverflow.com/questions/13483430/how-to-make-rounded-percentages-add-up-to-100#13485888
-var foo = (l, target) => {
-  var off = target - underscore.reduce(l, (acc, x) => { return acc + Math.round(x) }, 0)
-
-  return underscore.chain(l)
-                   .sortBy((x) => { return Math.round(x) - x })
-                   .map((x, i) => { return Math.round(x) + (off > i) - (i >= (l.length + off)) })
-                   .value()
-}
-
-module.exports.handleGeneralCommunication = (event) => {
+var synopsisNormalizer = () => {
   var i, data, duration, method, n, pct, results, total
 
   results = []
@@ -256,9 +185,9 @@ module.exports.handleGeneralCommunication = (event) => {
   pct = []
   for (i = 0; i < n; i++) {
     data[i] = { rank: i + 1,
-                   site: results[i].publisher, views: results[i].visits,
-                   daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0
-                 }
+                 site: results[i].publisher, views: results[i].visits,
+                 daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0
+               }
     if (results[i].method) {
       method = results[i].method
       underscore.extend(data[i], { faviconURL: method + '://favicon.ico', publisherURL: method + '://' + results[i].publisher })
@@ -280,18 +209,116 @@ module.exports.handleGeneralCommunication = (event) => {
   }
 
   pct = foo(pct, 100)
-  for (i = 0; i < n; i++) { data[i].percentage = pct[i] }
+  for (i = 0; i < n; i++) {
+    if (pct[i] === 0) {
+      data = data.slice(0, i)
+      break
+    }
+
+    data[i].percentage = pct[i]
+  }
+
+  return data
+}
+
+var publisherNormalizer = () => {
+  var data
+  var then = underscore.now() - (7 * msecs.day)
+
+  data = []
+  underscore.keys(publishers).sort().forEach((publisher) => {
+    var entries = publishers[publisher]
+    var i
+
+    for (i = 0; i < entries.length; i++) if (entries[i].when > then) break
+    if ((i !== 0) && (i !== entries.length)) entries = entries.slice(i)
+
+    data.push({ publisher: publisher, locations: underscore.map(entries, (entry) => { return entry.location }) })
+  })
+
+  return data
+}
+
+var logs = []
+var logNormalizer = (entries) => {
+  var i
+  var then = underscore.now() - (7 * msecs.day)
+
+  if (entries) logs = logs.concat(entries)
+
+  for (i = 0; i < logs.length; i++) if (logs[i].when > then) break
+  if ((i !== 0) && (i !== logs.length)) logs = logs.slice(i)
+
+  return logs
+}
+
+// courtesy of https://stackoverflow.com/questions/13483430/how-to-make-rounded-percentages-add-up-to-100#13485888
+var foo = (l, target) => {
+  var off = target - underscore.reduce(l, (acc, x) => { return acc + Math.round(x) }, 0)
+
+  return underscore.chain(l)
+                   .sortBy((x) => { return Math.round(x) - x })
+                   .map((x, i) => { return Math.round(x) + (off > i) - (i >= (l.length + off)) })
+                   .value()
+}
+
+module.exports.handleLedgerVisit = (e, location) => {
+  var i, publisher
+
+  if ((!synopsis) || (!location)) return
+
+  console.log('\n' + location + ': new=' + (!locations[location]))
+  if (!locations[location]) {
+    locations[location] = true
+
+    try {
+      publisher = LedgerPublisher.getPublisher(location)
+      if (publisher) {
+        if (!publishers[publisher]) publishers[publisher] = []
+        publishers[publisher].push({ when: underscore.now(), location: location })
+      }
+    } catch (ex) {
+      console.log('getPublisher error: ' + ex.toString())
+    }
+  }
+
+  // If the location has changed and we have a previous timestamp
+  if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
+    console.log('addVisit ' + currentLocation)
+    publisher = synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
+    i = location.indexOf(':/')
+    if ((i > 0) && (publisher) && (!synopsis.publishers[publisher].method)) {
+      synopsis.publishers[publisher].method = location.substr(0, i)
+    }
+
+    syncWriter(synopsisPath, synopsis, () => {})
+    console.log(synopsis.topN(topPublishersN))
+  }
+  // record the new current location and timestamp
+  currentLocation = location
+  currentTS = (new Date()).getTime()
+}
+
+var handleGeneralCommunication = (event) => {
+  console.log(JSON.stringify({
+    synopsis: synopsisNormalizer(),
+    publishers: publisherNormalizer(),
+    enabled: !!client,
+    logs: logNormalizer()
+  }, null, 2))
 
   event.returnValue = {
-    synopsis: data,
-    publishers: null,
+    synopsis: synopsisNormalizer(),
+    publishers: publisherNormalizer(),
     enabled: !!client,
-    logs: null
+    logs: logNormalizer()
   }
 }
 
 // If we are in the main process
+const ipc = require('electron').ipcMain
+
 if (ipc) {
   ipc.on(messages.LEDGER_VISIT, module.exports.handleLedgerVisit)
-  ipc.on(messages.LEDGER_GENERAL_COMMUNICATION, module.exports.handleGeneralCommunication)
+  ipc.on(messages.LEDGER_GENERAL_COMMUNICATION, handleGeneralCommunication)
 }
