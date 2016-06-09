@@ -279,9 +279,9 @@ module.exports.handleGeneralCommunication = (event) => {
 
   // TODO fill in required info
   event.returnValue = {
-    publishers: data,
+    synopsis: data,
+    publishers: null,
     enabled: false,
-    synopsis: null,
     logs: null
   }
 }
