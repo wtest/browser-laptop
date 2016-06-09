@@ -146,11 +146,11 @@ class LedgerTable extends ImmutableComponent {
     return <table id='ledgerTable' className='sort'>
       <thead>
         <tr>
-          <th className='sort-header'>Rank</th>
-          <th className='sort-header'>Site</th>
-          <th className='sort-header'>Views</th>
-          <th className='sort-header'>Time Spent</th>
-          <th className='sort-header notImplemented'>Adjustment</th>
+          <th className='sort-header' data-l10n-id='rank' />
+          <th className='sort-header' data-l10n-id='publisher' />
+          <th className='sort-header' data-l10n-id='views' />
+          <th className='sort-header' data-l10n-id='timeSpent' />
+          <th className='sort-header notImplemented' data-l10n-id='adjustment' />
           <th className='sort-header'>&#37;</th>
         </tr>
       </thead>
@@ -327,16 +327,25 @@ class ShieldsTab extends ImmutableComponent {
 }
 
 class PaymentsTab extends ImmutableComponent {
+  showLog (event) {
+    console.log('showLog')
+  }
+  update (event) {
+    console.log('update')
+  }
+  disconnect (event) {
+    console.log('disconnect')
+  }
   render () {
     return <div id='paymentsContainer'>
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
-        <div className='settingsListLink pull-right' data-l10n-id='disconnect' />
+        <div className='settingsListLink pull-right' data-l10n-id='disconnect' onClick={this.disconnect.bind(this)} />
       </div>
       <div className='notificationBar'>
         <div className='pull-left' data-l10n-id='notificationBarText' />
-        <div className='settingsListLink pull-right' data-l10n-id='update' />
-        <div className='settingsListLink pull-right' data-l10n-id='viewLog' />
+        <div className='settingsListLink pull-right' data-l10n-id='update' onClick={this.update.bind(this)} />
+        <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showLog.bind(this)} />
       </div>
       <LedgerTable data={this.props.data} />
     </div>
@@ -433,7 +442,7 @@ class PreferenceNavigation extends ImmutableComponent {
         selected={this.props.preferenceTab === preferenceTabs.SHIELDS}
       />
       <PreferenceNavigationButton icon='fa-lock'
-        dataL10nId='payments'
+        dataL10nId='publishers'
         onClick={this.props.changeTab.bind(null, preferenceTabs.PAYMENTS)}
         selected={this.props.preferenceTab === preferenceTabs.PAYMENTS}
       />
