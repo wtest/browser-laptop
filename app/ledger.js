@@ -10,12 +10,7 @@ const fs = require('fs')
 const path = require('path')
 const underscore = require('underscore')
 const messages = require('../js/constants/messages')
-
-// commented out to pass lint
-// const Immutable = require('immutable')
-// const appActions = require('../js/actions/appActions')
-
-const CommonMenu = require('../js/commonMenu')
+const commonMenu = require('../js/commonMenu')
 
 // publisher mapping information for debugging goes to this file
 const publishersPath = path.join(app.getPath('userData'), 'ledger-publishers.json')
@@ -39,7 +34,7 @@ var msecs = { day: 24 * 60 * 60 * 1000,
           }
 
 var client
-var topPublishersN = 10
+var topPublishersN = 25
 var nextPaymentPopup = underscore.now() + (6 * msecs.minute)
 
 var LedgerPublisher
@@ -156,7 +151,7 @@ var callback = (err, result, delayTime) => {
     if (nextPaymentPopup <= now) {
       nextPaymentPopup = now + (6 * msecs.hour)
 
-      CommonMenu.sendToFocusedWindow(electron.BrowserWindow.getFocusedWindow(), [messages.SHORTCUT_NEW_FRAME, result.thisPayment.paymentURL])
+      commonMenu.sendToFocusedWindow(electron.BrowserWindow.getFocusedWindow(), [messages.SHORTCUT_NEW_FRAME, result.thisPayment.paymentURL])
     }
   }
 
@@ -192,7 +187,7 @@ var locations = {}
 var publishers = {}
 
 module.exports.handleLedgerVisit = (e, location) => {
-  var publisher
+  var i, publisher
 
   if ((!synopsis) || (!location)) return
 
@@ -215,7 +210,13 @@ module.exports.handleLedgerVisit = (e, location) => {
   // If the location has changed and we have a previous timestamp
   if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
     console.log('addVisit ' + currentLocation)
-    if (synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)) persistSynopsis()
+    publisher = synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
+    i = location.indexOf(':/')
+    if ((i > 0) && (publisher) && (!synopsis.publishers[publisher].method)) {
+      synopsis.publishers[publisher].method = location.substr(0, i)
+    }
+
+    persistSynopsis()
     console.log(synopsis.topN(topPublishersN))
   }
   // record the new current location and timestamp
