@@ -190,7 +190,9 @@ var synopsisNormalizer = () => {
                }
     if (results[i].method) {
       method = results[i].method
-      underscore.extend(data[i], { faviconURL: method + '://favicon.ico', publisherURL: method + '://' + results[i].publisher })
+      underscore.extend(data[i], { faviconURL: method + '://' + results[i].publisher + '/favicon.ico',
+                                   publisherURL: method + '://' + results[i].publisher
+                                 })
     }
     pct[i] = Math.round((results[i].score * 100) / total)
 
