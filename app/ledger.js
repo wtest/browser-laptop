@@ -10,8 +10,12 @@ const fs = require('fs')
 const path = require('path')
 const underscore = require('underscore')
 const messages = require('../js/constants/messages')
-const Immutable = require('immutable')
-const appActions = require('../js/actions/appActions')
+
+// commented out to pass lint
+// const Immutable = require('immutable')
+// const appActions = require('../js/actions/appActions')
+
+const CommonMenu = require('../js/commonMenu')
 
 // publisher mapping information for debugging goes to this file
 const publishersPath = path.join(app.getPath('userData'), 'ledger-publishers.json')
@@ -152,9 +156,7 @@ var callback = (err, result, delayTime) => {
     if (nextPaymentPopup <= now) {
       nextPaymentPopup = now + (6 * msecs.hour)
 
-      appActions.newWindow(Immutable.fromJS({
-        location: result.thisPayment.paymentURL
-      }))
+      CommonMenu.sendToFocusedWindow(electron.BrowserWindow.getFocusedWindow(), [messages.SHORTCUT_NEW_FRAME, result.thisPayment.paymentURL])
     }
   }
 
