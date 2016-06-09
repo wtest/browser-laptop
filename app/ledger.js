@@ -165,7 +165,8 @@ var locations = {}
 var publishers = {}
 
 var synopsisNormalizer = () => {
-  var i, data, duration, method, n, pct, results, total
+  var i, duration, method, n, pct, results, total
+  var data = []
 
   results = []
   underscore.keys(synopsis.publishers).forEach((publisher) => {
@@ -179,9 +180,8 @@ var synopsisNormalizer = () => {
 
   total = 0
   for (i = 0; i < n; i++) { total += results[i].score }
-  if (total === 0) return
+  if (total === 0) return data
 
-  data = []
   pct = []
   for (i = 0; i < n; i++) {
     data[i] = { rank: i + 1,
@@ -224,10 +224,9 @@ var synopsisNormalizer = () => {
 }
 
 var publisherNormalizer = () => {
-  var data
+  var data = []
   var then = underscore.now() - (7 * msecs.day)
 
-  data = []
   underscore.keys(publishers).sort().forEach((publisher) => {
     var entries = publishers[publisher]
     var i
