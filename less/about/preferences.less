@@ -155,8 +155,19 @@ a {
   text-decoration: underline;
 }
 
-.settingsListTitle {
-  margin-bottom: 10px;
+.settingsListTitle,
+.settingsListLink {
+  color: @braveOrange;
+  font-size: 1.2em;
+}
+
+.settingsListLink {
+  font-size: 1em;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .settingsList {
@@ -250,77 +261,59 @@ input[type="checkbox"][disabled] {
   padding: 3px;
 }
 
-#shieldsContainer,
-#ledgerContainer,
-#syncContainer,
-#intentMapContainer {
-  display: none;
-}
-
-#shieldsContainer.selected,
-#ledgerContainer.selected,
-#syncContainer.selected,
-#intentMapContainer.selected {
-  display: block;
-}
-
-.segmentedControl {
-  width: 30%;
-  border: solid 1px @braveOrange;
-  border-radius: @borderRadius;
-  margin: 0 auto 20px;
-  height: 2em;
-}
-
-.segmentedControl > div {
-  color: @braveOrange;
-  text-align: center;
-  display: inline-block;
-  width: 50%;
-  height: 2em;
-  line-height: 2em;
-  cursor: pointer;
-}
-
-.segmentedControl > div.selected {
-  color: white;
-  background: @braveOrange;
-}
-
 #shieldsContainer {
 
 }
 
-#ledgerContainer {
+#paymentsContainer {
 
-  h2 {
-    color: @braveOrange;
-    font-weight: 200;
-    font-size: 1.25em;
-    margin-bottom: 2em;
+  .titleBar {
+    overflow: hidden;
   }
 
   & > table,
-  & > table tbody {
-    background: @lightGray;
+  & > table tbody,
+  .notificationBar {
     border: none;
     padding: 50px;
     margin: 0 auto;
     width: 80%;
+  }
+
+  .notificationBar {
+    margin-top: 50px;
+    padding: 30px;
+    height: 15px;
+    background: @lightGray;
     border-radius: @bigBorderRadius;
+    clear: both;
+
+    > div {
+      display: inline-block;
+      line-height: 1em;
+      font-size: 1em;
+
+      &.settingsListLink:last-of-type {
+        margin-right: 20px;
+      }
+    }
   }
 
   tr {
-    height: 50px;
+    height: 1.5em;
 
     th {
       color: @darkGray;
       cursor: pointer;
-      text-align: right;
+      text-align: center;
       font-weight: 200;
 
-      &:nth-of-type(1),
-      &:nth-of-type(2) {
+      &:hover {
+        text-decoration: underline;
+      }
+
+      &:nth-of-type(2),
+      &:nth-of-type(4) {
         text-align: left;
       }
     }
@@ -328,11 +321,11 @@ input[type="checkbox"][disabled] {
     td {
       color: @mediumGray;
       -webkit-font-smoothing: antialiased;
-      text-align: right;
+      text-align: center;
       width: 8%;
 
-      &:nth-of-type(1),
-      &:nth-of-type(2) {
+      &:nth-of-type(2),
+      &:nth-of-type(4) {
         text-align: left;
       }
 

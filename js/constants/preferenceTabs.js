@@ -9,10 +9,11 @@ const preferenceTabs = {
   GENERAL: _,
   SEARCH: _,
   TABS: _,
-  SYNC: _,
-  PRIVACY: _,
   SECURITY: _,
-  BRAVERY: _
+  SHIELDS: _,
+  PAYMENTS: _,
+  SYNC: _,
+  ADVANCED: _
 }
 
 module.exports = mapValuesByKeys(preferenceTabs)

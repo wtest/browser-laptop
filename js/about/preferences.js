@@ -99,6 +99,68 @@ class SettingCheckbox extends ImmutableComponent {
   }
 }
 
+class LedgerTableRow extends ImmutableComponent {
+  leftPad (number, limit) {
+    return (number < limit ? ('0' + number) : number)
+  }
+  getFormattedViews () {
+    var v = this.props.views << 0
+    if (v > 999) {
+      return ('>1k')
+    }
+    v = this.leftPad(v, 100)
+    v = this.leftPad(v, 10)
+  }
+  getFormattedPercentage () {
+    return this.leftPad(this.props.percentage << 0, 10)
+  }
+  getFormattedTime () {
+    var m = this.props.minutesSpent << 0
+    var s = this.props.secondsSpent << 0
+    if (m > 59) {
+      return '>1h'
+    }
+    return ((this.leftPad(m, 10) + 'm ') + (this.leftPad(s, 10) + 's '))
+  }
+  render () {
+    return <tr>
+      <td>{this.props.rank}</td>
+      <td>{this.props.site}</td>
+      <td>{this.props.views}</td>
+      <td>{((this.props.minutesSpent + 'm ') + (this.props.secondsSpent + 's '))}</td>
+      <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
+      <td>{this.props.percentage}</td>
+    </tr>
+  }
+}
+
+class LedgerTable extends ImmutableComponent {
+  componentDidMount (event) {
+    return tableSort(document.getElementById('ledgerTable')).refresh()
+  }
+  render () {
+    var rows = []
+    for (let i = 0; i < this.props.data.length; i++) {
+      rows[i] = <LedgerTableRow {...this.props.data[i]} />
+    }
+    return <table id='ledgerTable' className='sort'>
+      <thead>
+        <tr>
+          <th className='sort-header'>Rank</th>
+          <th className='sort-header'>Site</th>
+          <th className='sort-header'>Views</th>
+          <th className='sort-header'>Time Spent</th>
+          <th className='sort-header notImplemented'>Adjustment</th>
+          <th className='sort-header'>&#37;</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows}
+      </tbody>
+    </table>
+  }
+}
+
 class GeneralTab extends ImmutableComponent {
   render () {
     var languageOptions = this.props.languageCodes.map(function (lc) {
@@ -188,10 +250,204 @@ class TabsTab extends ImmutableComponent {
   }
 }
 
-class SyncTab extends ImmutableComponent {
+class SecurityTab extends ImmutableComponent {
   render () {
     return <div>
+      <SettingsList>
+        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
+      <div>
+        <span className='linkText' data-l10n-id='managePasswords'
+          onClick={aboutActions.newFrame.bind(null, {
+            location: 'about:passwords'
+          }, true)}></span>
+      </div>
+    </div>
+  }
+}
+
+class ShieldsTab extends ImmutableComponent {
+  constructor () {
+    super()
+    this.onChangeAdControl = this.onChangeAdControl.bind(this)
+    this.onToggleHTTPSE = this.onToggleSetting.bind(this, httpsEverywhere)
+    this.onToggleSafeBrowsing = this.onToggleSetting.bind(this, safeBrowsing)
+    this.onToggleNoScript = this.onToggleSetting.bind(this, noScript)
+  }
+  onChangeAdControl (e) {
+    if (e.target.value === 'showBraveAds') {
+      aboutActions.setResourceEnabled(adblock, true)
+      aboutActions.setResourceEnabled(trackingProtection, true)
+      aboutActions.setResourceEnabled(adInsertion, true)
+    } else if (e.target.value === 'blockAds') {
+      aboutActions.setResourceEnabled(adblock, true)
+      aboutActions.setResourceEnabled(trackingProtection, true)
+      aboutActions.setResourceEnabled(adInsertion, false)
+    } else {
+      aboutActions.setResourceEnabled(adblock, false)
+      aboutActions.setResourceEnabled(trackingProtection, false)
+      aboutActions.setResourceEnabled(adInsertion, false)
+    }
+  }
+  onChangeCookieControl (e) {
+    aboutActions.setResourceEnabled(cookieblock, e.target.value === 'block3rdPartyCookie')
+  }
+  onToggleSetting (setting, e) {
+    aboutActions.setResourceEnabled(setting, e.target.checked)
+  }
+  render () {
+    return <div id='shieldsContainer'>
+      <SettingsList dataL10nId='braveryDefaults'>
+        <SettingItem dataL10nId='adControl'>
+          <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
+            <option data-l10n-id='showBraveAds' value='showBraveAds' />
+            <option data-l10n-id='blockAds' value='blockAds' />
+            <option data-l10n-id='allowAdsAndTracking' value='allowAdsAndTracking' />
+          </select>
+        </SettingItem>
+        <SettingItem dataL10nId='cookieControl'>
+          <select value={this.props.braveryDefaults.get('cookieControl')} onChange={this.onChangeCookieControl}>
+            <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
+            <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
+          </select>
+        </SettingItem>
+        <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
+        <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
+        <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
+      </SettingsList>
+      <SettingsList dataL10nId='advancedPrivacySettings'>
+        <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
+      <SitePermissionsPage siteSettings={this.props.siteSettings} />
+    </div>
+  }
+}
+
+class PaymentsTab extends ImmutableComponent {
+  render () {
+    return <div id='paymentsContainer'>
+      <div className='titleBar'>
+        <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
+        <div className='settingsListLink pull-right' data-l10n-id='disconnect' />
+      </div>
+      <div className='notificationBar'>
+        <div className='pull-left' data-l10n-id='notificationBarText' />
+        <div className='settingsListLink pull-right' data-l10n-id='update' />
+        <div className='settingsListLink pull-right' data-l10n-id='viewLog' />
+      </div>
+      <LedgerTable data={this.props.data} />
+    </div>
+  }
+}
+PaymentsTab.propTypes = { data: React.PropTypes.array.isRequired }
+PaymentsTab.defaultProps = { data: [] }
+
+class SyncTab extends ImmutableComponent {
+  render () {
+    return <div id='syncContainer'>
       Sync settings coming soon
+    </div>
+  }
+}
+
+class AdvancedTab extends ImmutableComponent {
+  render () {
+    return <div id='advancedContainer'>
+      Advanced settings coming soon
+    </div>
+  }
+}
+
+class HelpfulHints extends ImmutableComponent {
+  render () {
+    return <div className='helpfulHints'>
+      <span className='hintsTitleContainer'>
+        <span data-l10n-id='hintsTitle' />
+        <span className='hintsRefresh fa fa-refresh'
+          onClick={this.props.refreshHint} />
+      </span>
+      <div data-l10n-id={`hint${this.props.hintNumber}`} />
+      <div className='helpfulHintsBottom'>
+        <a data-l10n-id='sendUsFeedback' href={appConfig.contactUrl} />
+      </div>
+    </div>
+  }
+}
+
+class PreferenceNavigationButton extends ImmutableComponent {
+  render () {
+    return <div className={cx({
+      selected: this.props.selected,
+      [this.props.className]: !!this.props.className
+    })}>
+      <div onClick={this.props.onClick}
+        className={cx({
+          topBarButton: true,
+          fa: true,
+          [this.props.icon]: true
+        })}>
+        <div className='tabMarkerText'
+          data-l10n-id={this.props.dataL10nId} />
+      </div>
+      {
+        this.props.selected
+        ? <div className='tabMarkerContainer'>
+          <div className='tabMarker' />
+        </div>
+        : null
+      }
+    </div>
+  }
+}
+
+class PreferenceNavigation extends ImmutableComponent {
+  render () {
+    return <div className='prefAside'>
+      <div data-l10n-id='prefAsideTitle' />
+      <PreferenceNavigationButton icon='fa-list-alt'
+        dataL10nId='general'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.GENERAL)}
+        selected={this.props.preferenceTab === preferenceTabs.GENERAL}
+      />
+      <PreferenceNavigationButton icon='fa-search'
+        dataL10nId='search'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.SEARCH)}
+        selected={this.props.preferenceTab === preferenceTabs.SEARCH}
+      />
+      <PreferenceNavigationButton icon='fa-bookmark-o'
+        dataL10nId='tabs'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.TABS)}
+        selected={this.props.preferenceTab === preferenceTabs.TABS}
+      />
+      <PreferenceNavigationButton icon='fa-lock'
+        dataL10nId='security'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.SECURITY)}
+        selected={this.props.preferenceTab === preferenceTabs.SECURITY}
+      />
+      <PreferenceNavigationButton icon='fa-user'
+        dataL10nId='shields'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.SHIELDS)}
+        selected={this.props.preferenceTab === preferenceTabs.SHIELDS}
+      />
+      <PreferenceNavigationButton icon='fa-lock'
+        dataL10nId='payments'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.PAYMENTS)}
+        selected={this.props.preferenceTab === preferenceTabs.PAYMENTS}
+      />
+      <PreferenceNavigationButton icon='fa-refresh'
+        dataL10nId='sync'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.SYNC)}
+        selected={this.props.preferenceTab === preferenceTabs.SYNC}
+      />
+      <PreferenceNavigationButton icon='fa-lock'
+        dataL10nId='advanced'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.ADVANCED)}
+        selected={this.props.preferenceTab === preferenceTabs.ADVANCED}
+      />
+      <HelpfulHints hintNumber={this.props.hintNumber} refreshHint={this.props.refreshHint} />
     </div>
   }
 }
@@ -202,7 +458,6 @@ class SitePermissionsPage extends React.Component {
       return value.get ? typeof value.get(name) === 'boolean' : false
     })
   }
-
   isPermissionsNonEmpty () {
     // Check whether there is at least one permission set
     return this.props.siteSettings.some((value) => {
@@ -216,11 +471,9 @@ class SitePermissionsPage extends React.Component {
       return false
     })
   }
-
   deletePermission (name, hostPattern) {
     aboutActions.changeSiteSetting(hostPattern, name, null)
   }
-
   render () {
     return this.isPermissionsNonEmpty()
     ? <div>
@@ -259,343 +512,6 @@ class SitePermissionsPage extends React.Component {
   }
 }
 
-class PrivacyTab extends ImmutableComponent {
-  constructor () {
-    super()
-    this.onChangeAdControl = this.onChangeAdControl.bind(this)
-    this.onToggleHTTPSE = this.onToggleSetting.bind(this, httpsEverywhere)
-    this.onToggleSafeBrowsing = this.onToggleSetting.bind(this, safeBrowsing)
-    this.onToggleNoScript = this.onToggleSetting.bind(this, noScript)
-  }
-  onChangeAdControl (e) {
-    if (e.target.value === 'showBraveAds') {
-      aboutActions.setResourceEnabled(adblock, true)
-      aboutActions.setResourceEnabled(trackingProtection, true)
-      aboutActions.setResourceEnabled(adInsertion, true)
-    } else if (e.target.value === 'blockAds') {
-      aboutActions.setResourceEnabled(adblock, true)
-      aboutActions.setResourceEnabled(trackingProtection, true)
-      aboutActions.setResourceEnabled(adInsertion, false)
-    } else {
-      aboutActions.setResourceEnabled(adblock, false)
-      aboutActions.setResourceEnabled(trackingProtection, false)
-      aboutActions.setResourceEnabled(adInsertion, false)
-    }
-  }
-  onChangeCookieControl (e) {
-    aboutActions.setResourceEnabled(cookieblock, e.target.value === 'block3rdPartyCookie')
-  }
-  onToggleSetting (setting, e) {
-    aboutActions.setResourceEnabled(setting, e.target.checked)
-  }
-  render () {
-    return <div>
-      <SettingsList dataL10nId='braveryDefaults'>
-        <SettingItem dataL10nId='adControl'>
-          <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
-            <option data-l10n-id='showBraveAds' value='showBraveAds' />
-            <option data-l10n-id='blockAds' value='blockAds' />
-            <option data-l10n-id='allowAdsAndTracking' value='allowAdsAndTracking' />
-          </select>
-        </SettingItem>
-        <SettingItem dataL10nId='cookieControl'>
-          <select value={this.props.braveryDefaults.get('cookieControl')} onChange={this.onChangeCookieControl}>
-            <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
-            <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
-          </select>
-        </SettingItem>
-        <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
-        <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
-        <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
-      </SettingsList>
-      <SettingsList dataL10nId='advancedPrivacySettings'>
-        <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SitePermissionsPage siteSettings={this.props.siteSettings} />
-    </div>
-  }
-}
-
-class SecurityTab extends ImmutableComponent {
-  render () {
-    return <div>
-      <SettingsList>
-        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <div>
-        <span className='linkText' data-l10n-id='managePasswords'
-          onClick={aboutActions.newFrame.bind(null, {
-            location: 'about:passwords'
-          }, true)}></span>
-      </div>
-    </div>
-  }
-}
-
-class BraveryShields extends ImmutableComponent {
-  render () {
-    return <div id='shieldsContainer' className='selected'>
-      <PrivacyTab settings={this.props.settings} siteSettings={this.props.siteSettings} braveryDefaults={this.props.braveryDefaults} onChangeSetting={this.onChangeSetting} />
-    </div>
-  }
-}
-
-class BraveryLedgerItem extends ImmutableComponent {
-  getFormattedViews () {
-    var v = this.props.views << 0
-    if (v > 999) {
-      return ('>1k')
-    }
-    v = (v < 100 ? ('0' + v) : v)
-    return (v < 10 ? ('0' + v) : v)
-  }
-  getFormattedPercentage () {
-    var p = this.props.percentage << 0
-    return (p < 10 ? ('0' + p) : p)
-  }
-  getFormattedTime () {
-    var m = this.props.minutesSpent << 0
-    var s = this.props.secondsSpent << 0
-    if (m > 59) {
-      return ('>1h')
-    }
-    return (((m < 10 ? ('0' + m) : m) + 'm ') + ((s < 10 ? ('0' + s) : s) + 's '))
-  }
-  render () {
-    return <tr>
-      <td>{this.props.rank}</td>
-      <td>{this.props.site}</td>
-      <td>{this.getFormattedViews()}</td>
-      <td>{this.getFormattedTime()}</td>
-      <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-      <td>{this.getFormattedPercentage()}</td>
-    </tr>
-  }
-}
-
-class BraveryLedger extends ImmutableComponent {
-  componentDidMount (event) {
-    return tableSort(document.getElementById('recipientTable'))
-  }
-  render () {
-    var rows = []
-    for (let i = 0; i < this.props.data.length; i++) {
-      rows[i] = <BraveryLedgerItem {...this.props.data[i]} />
-    }
-    return <div id='ledgerContainer'>
-      <h2>Top Sites Recipients</h2>
-      <table id='recipientTable'>
-        <tbody>
-          <tr className='no-sort'>
-            <th>Rank</th>
-            <th>Site</th>
-            <th data-sort-method='number'>Views</th>
-            <th>Time Spent</th>
-            <th className='notImplemented'>Adjustment</th>
-            <th>&#37;</th>
-          </tr>
-          {rows}
-        </tbody>
-      </table>
-    </div>
-  }
-}
-
-BraveryLedger.propTypes = {
-  data: React.PropTypes.array.isRequired
-}
-
-BraveryLedger.defaultProps = {
-  data: [
-    {
-      rank: 1,
-      site: 'facebook.com',
-      views: 27,
-      minutesSpent: 3,
-      secondsSpent: 0,
-      percentage: 45
-    },
-    {
-      rank: 2,
-      site: 'wsj.com',
-      views: 3,
-      minutesSpent: 31,
-      secondsSpent: 27,
-      percentage: 14
-    },
-    {
-      rank: 3,
-      site: 'therichest.com',
-      views: 136,
-      minutesSpent: 2,
-      secondsSpent: 57,
-      percentage: 13
-    },
-    {
-      rank: 4,
-      site: 'macsales.com',
-      views: 4,
-      minutesSpent: 0,
-      secondsSpent: 51,
-      percentage: 9
-    },
-    {
-      rank: 5,
-      site: 'boingboing.net',
-      views: 1048,
-      minutesSpent: 0,
-      secondsSpent: 40,
-      percentage: 8
-    },
-    {
-      rank: 6,
-      site: 'foxnews.com',
-      views: 1,
-      minutesSpent: 0,
-      secondsSpent: 16,
-      percentage: 6
-    },
-    {
-      rank: 7,
-      site: 'steliasmelkite.org',
-      views: 10914,
-      minutesSpent: 0,
-      secondsSpent: 6,
-      percentage: 5
-    }
-  ]
-}
-
-class BraverySync extends ImmutableComponent {
-  render () {
-    return <div id='syncContainer'>
-      <h2>Sync</h2>
-      <SyncTab />
-    </div>
-  }
-}
-
-class BraveryIntentMap extends ImmutableComponent {
-  render () {
-    return <div id='intentMapContainer'>
-      <h2>Intent Map</h2>
-    </div>
-  }
-}
-
-class BraveryTab extends ImmutableComponent {
-  navigate (event) {
-    [].forEach.call(document.getElementById('braveryNav').children, function (e, i) {
-      e.removeAttribute('class')
-      document.getElementById(e.dataset.view).removeAttribute('class')
-    })
-    event.target.setAttribute('class', 'selected')
-    document.getElementById(event.target.dataset.view).setAttribute('class', 'selected')
-  }
-  render () {
-    return <div id='braveryContainer'>
-      <div className='segmentedControl' id='braveryNav'>
-        <div className='selected' onClick={this.navigate} data-view='shieldsContainer'>Shields</div>
-        <div onClick={this.navigate} data-view='ledgerContainer'>Ledger</div>
-      </div>
-      <BraveryShields settings={this.props.settings} siteSettings={this.props.siteSettings} braveryDefaults={this.props.braveryDefaults} onChangeSetting={this.onChangeSetting} />
-      <BraveryLedger />
-      <BraverySync />
-      <BraveryIntentMap />
-    </div>
-  }
-}
-
-class TopBarButton extends ImmutableComponent {
-  render () {
-    return <div className={cx({
-      selected: this.props.selected,
-      [this.props.className]: !!this.props.className
-    })}>
-      <div onClick={this.props.onClick}
-        className={cx({
-          topBarButton: true,
-          fa: true,
-          [this.props.icon]: true
-        })}>
-        <div className='tabMarkerText'
-          data-l10n-id={this.props.dataL10nId} />
-      </div>
-      {
-        this.props.selected
-        ? <div className='tabMarkerContainer'>
-          <div className='tabMarker' />
-        </div>
-        : null
-      }
-    </div>
-  }
-}
-
-class HelpfulHints extends ImmutableComponent {
-  render () {
-    return <div className='helpfulHints'>
-      <span className='hintsTitleContainer'>
-        <span data-l10n-id='hintsTitle' />
-        <span className='hintsRefresh fa fa-refresh'
-          onClick={this.props.refreshHint} />
-      </span>
-      <div data-l10n-id={`hint${this.props.hintNumber}`} />
-      <div className='helpfulHintsBottom'>
-        <a data-l10n-id='sendUsFeedback' href={appConfig.contactUrl} />
-      </div>
-    </div>
-  }
-}
-
-class TopBar extends ImmutableComponent {
-  render () {
-    return <div className='prefAside'>
-      <div data-l10n-id='prefAsideTitle' />
-      <TopBarButton icon='fa-list-alt'
-        dataL10nId='general'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.GENERAL)}
-        selected={this.props.preferenceTab === preferenceTabs.GENERAL}
-      />
-      <TopBarButton icon='fa-search'
-        dataL10nId='search'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.SEARCH)}
-        selected={this.props.preferenceTab === preferenceTabs.SEARCH}
-      />
-      <TopBarButton icon='fa-bookmark-o'
-        dataL10nId='tabs'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.TABS)}
-        selected={this.props.preferenceTab === preferenceTabs.TABS}
-      />
-      <TopBarButton icon='fa-refresh'
-        dataL10nId='sync'
-        className='notImplemented'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.SYNC)}
-        selected={this.props.preferenceTab === preferenceTabs.SYNC}
-      />
-      <TopBarButton icon='fa-user'
-        dataL10nId='privacy'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.PRIVACY)}
-        selected={this.props.preferenceTab === preferenceTabs.PRIVACY}
-      />
-      <TopBarButton icon='fa-lock'
-        dataL10nId='security'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.SECURITY)}
-        selected={this.props.preferenceTab === preferenceTabs.SECURITY}
-      />
-      <TopBarButton icon='fa-lock'
-        dataL10nId='bravery'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.BRAVERY)}
-        selected={this.props.preferenceTab === preferenceTabs.BRAVERY}
-      />
-      <HelpfulHints hintNumber={this.props.hintNumber} refreshHint={this.props.refreshHint} />
-    </div>
-  }
-}
-
 class AboutPreferences extends React.Component {
   constructor () {
     super()
@@ -615,7 +531,7 @@ class AboutPreferences extends React.Component {
       })
     })
     window.addEventListener(messages.LEDGER_UPDATED, (e) => {
-      BraveryLedger.defaultProps.data = e.detail
+      PaymentsTab.defaultProps.data = e.detail
     })
     window.addEventListener(messages.SITE_SETTINGS_UPDATED, (e) => {
       this.setState({
@@ -679,21 +595,24 @@ class AboutPreferences extends React.Component {
       case preferenceTabs.TABS:
         tab = <TabsTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
-      case preferenceTabs.SYNC:
-        tab = <SyncTab settings={settings} onChangeSetting={this.onChangeSetting} />
-        break
-      case preferenceTabs.PRIVACY:
-        tab = <PrivacyTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
-        break
       case preferenceTabs.SECURITY:
         tab = <SecurityTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
-      case preferenceTabs.BRAVERY:
-        tab = <BraveryTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
+      case preferenceTabs.SHIELDS:
+        tab = <ShieldsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
+        break
+      case preferenceTabs.PAYMENTS:
+        tab = <PaymentsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
+        break
+      case preferenceTabs.SYNC:
+        tab = <SyncTab settings={settings} onChangeSetting={this.onChangeSetting} />
+        break
+      case preferenceTabs.ADVANCED:
+        tab = <AdvancedTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
     }
     return <div>
-      <TopBar preferenceTab={this.state.preferenceTab} hintNumber={this.state.hintNumber}
+      <PreferenceNavigation preferenceTab={this.state.preferenceTab} hintNumber={this.state.hintNumber}
         changeTab={this.changeTab.bind(this)}
         refreshHint={this.refreshHint.bind(this)}
         getNextHintNumber={this.getNextHintNumber.bind(this)} />
