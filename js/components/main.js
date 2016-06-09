@@ -829,7 +829,7 @@ class Main extends ImmutableComponent {
               allSiteSettings={allSiteSettings}
               activeSiteSettings={activeSiteSettings}
               enableAds={this.enableAds}
-              ledger={ledgerInterop.history()}
+              ledger={ledgerInterop.generalCommunications()}
               enableNoScript={this.enableNoScript}
               enableFingerprintingProtection={this.enableFingerprintingProtection}
               block3rdPartyStorage={this.block3rdPartyStorage}
