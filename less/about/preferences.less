@@ -319,14 +319,26 @@ input[type="checkbox"][disabled] {
       text-align: center;
       width: 8%;
 
+      a {
+        vertical-align: middle;
+
+        img {
+          width: 1.5em;
+          height: 1.5em;
+          margin: -0.375em 0.375em 0 0;
+          vertical-align: middle;
+        }
+      }
+
       &:nth-of-type(2) {
         width: 20%;
+        text-align: left;
       }
 
       input[type='range'] {
         background: transparent;
         -webkit-appearance: none;
-        width: 80%;
+        width: 90%;
         margin: 0 0 0 20%;
         outline: none;
 

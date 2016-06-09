@@ -100,34 +100,26 @@ class SettingCheckbox extends ImmutableComponent {
 }
 
 class LedgerTableRow extends ImmutableComponent {
-  leftPad (number, limit) {
-    return (number < limit ? ('0' + number) : number)
-  }
-  getFormattedViews () {
-    var v = this.props.views << 0
-    if (v > 999) {
-      return ('>1k')
-    }
-    v = this.leftPad(v, 100)
-    v = this.leftPad(v, 10)
-  }
-  getFormattedPercentage () {
-    return this.leftPad(this.props.percentage << 0, 10)
-  }
   getFormattedTime () {
-    var m = this.props.minutesSpent << 0
-    var s = this.props.secondsSpent << 0
-    if (m > 59) {
-      return '>1h'
+    var d = this.props.daysSpent
+    var h = this.props.hoursSpent
+    var m = this.props.minutesSpent
+    var s = this.props.secondsSpent
+    if (d << 0 > 364) {
+      return '>1y'
     }
-    return ((this.leftPad(m, 10) + 'm ') + (this.leftPad(s, 10) + 's '))
+    d = (d << 0 === 0) ? '' : (d + 'd ')
+    h = (h << 0 === 0) ? '' : (h + 'h ')
+    m = (m << 0 === 0) ? '' : (m + 'm ')
+    s = (s + 's ')
+    return (d + h + m + s + '')
   }
   render () {
     return <tr>
       <td>{this.props.rank}</td>
-      <td>{this.props.site}</td>
+      <td><a href={this.props.publisherURL}><img src={this.props.faviconURL} alt={this.props.site} /><span>{this.props.site}</span></a></td>
       <td>{this.props.views}</td>
-      <td>{((this.props.minutesSpent + 'm ') + (this.props.secondsSpent + 's '))}</td>
+      <td>{this.getFormattedTime()}</td>
       <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
       <td>{this.props.percentage}</td>
     </tr>
@@ -327,8 +319,8 @@ class ShieldsTab extends ImmutableComponent {
 }
 
 class PaymentsTab extends ImmutableComponent {
-  showLog (event) {
-    console.log('showLog')
+  showLogOverlay (event) {
+    console.log('showLogOverlay')
   }
   update (event) {
     console.log('update')
@@ -345,7 +337,7 @@ class PaymentsTab extends ImmutableComponent {
       <div className='notificationBar'>
         <div className='pull-left' data-l10n-id='notificationBarText' />
         <div className='settingsListLink pull-right' data-l10n-id='update' onClick={this.update.bind(this)} />
-        <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showLog.bind(this)} />
+        <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showLogOverlay.bind(this)} />
       </div>
       <LedgerTable data={this.props.data} />
     </div>
