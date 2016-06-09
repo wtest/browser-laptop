@@ -615,7 +615,8 @@ class AboutPreferences extends React.Component {
       })
     })
     window.addEventListener(messages.LEDGER_UPDATED, (e) => {
-      BraveryLedger.defaultProps.data = e.detail
+      // the e.detail object contains ledger info such as logs, publishers stats, enabled etc...
+      BraveryLedger.defaultProps.data = e.detail.publishers
     })
     window.addEventListener(messages.SITE_SETTINGS_UPDATED, (e) => {
       this.setState({

@@ -233,7 +233,7 @@ var foo = (l, target) => {
                    .value()
 }
 
-module.exports.handleStats = (event) => {
+module.exports.handleGeneralCommunication = (event) => {
   var i, data, duration, n, pct, results, total
 
   results = []
@@ -269,18 +269,24 @@ module.exports.handleStats = (event) => {
       data[i].minutesSpent = Math.max(Math.round(duration / msecs.minute), 1)
       data[i].secondsSpent = Math.round((duration % msecs.minute) / msecs.second)
     } else {
-      data[i].seconcsSpent = Math.max(Math.round(duration / msecs.second), 1)
+      data[i].secondsSpent = Math.max(Math.round(duration / msecs.second), 1)
     }
   }
 
   pct = foo(pct, 100)
   for (i = 0; i < n; i++) { data[i].percentage = pct[i] }
 
-  event.returnValue = data
+  // TODO fill in required info
+  event.returnValue = {
+    publishers: data,
+    enabled: false,
+    synopsis: null,
+    logs: null
+  }
 }
 
 // If we are in the main process
 if (ipc) {
   ipc.on(messages.LEDGER_VISIT, module.exports.handleLedgerVisit)
-  ipc.on(messages.LEDGER_STATS, module.exports.handleStats)
+  ipc.on(messages.LEDGER_GENERAL_COMMUNICATION, module.exports.handleGeneralCommunication)
 }

@@ -12,6 +12,6 @@ module.exports.visit = (location) => {
 }
 
 // Retrieve the history from the main process
-module.exports.history = () => {
-  return ipc.sendSync(messages.LEDGER_STATS)
+module.exports.generalCommunications = (requestMessage) => {
+  return ipc.sendSync(messages.LEDGER_GENERAL_COMMUNICATION, requestMessage)
 }
