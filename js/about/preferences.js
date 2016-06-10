@@ -147,7 +147,7 @@ class LedgerTableRow extends ImmutableComponent {
 
 class LedgerTable extends ImmutableComponent {
   componentDidMount (event) {
-    return tableSort(document.getElementById('ledgerTable')).refresh()
+    return tableSort(document.getElementById('ledgerTable'))
   }
   render () {
     var rows = []
@@ -163,6 +163,38 @@ class LedgerTable extends ImmutableComponent {
           <th className='sort-header' data-l10n-id='timeSpent' />
           <th className='sort-header notImplemented' data-l10n-id='adjustment' />
           <th className='sort-header'>&#37;</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows}
+      </tbody>
+    </table>
+  }
+}
+
+class PublisherTableRow extends ImmutableComponent {
+  render () {
+    return <tr>
+      <td>{this.props.publisher}</td>
+      <td>{this.props.locations}</td>
+    </tr>
+  }
+}
+
+class PublisherTable extends ImmutableComponent {
+  componentDidMount (event) {
+    return tableSort(document.getElementById('publisherTable'))
+  }
+  render () {
+    var rows = []
+    for (let i = 0; i < this.props.data.publishers.length; i++) {
+      rows[i] = <PublisherTableRow {...this.props.data.publishers[i]} />
+    }
+    return <table id='publisherTable' className='sort'>
+      <thead>
+        <tr>
+          <th className='sort-header' data-l10n-id='publisher' />
+          <th className='sort-header' data-l10n-id='visits' />
         </tr>
       </thead>
       <tbody>
@@ -342,6 +374,13 @@ class PaymentsTab extends ImmutableComponent {
   componentWillMount () {
     this.setState({ shouldShowOverlay: false })
   }
+  getOverlayContent () {
+    return !this.props.data.publishers || this.props.data.publishers.length < 1 ? <PublisherTable data={{
+      publishers: this.props.data.publishers,
+      logs: this.props.data.logs,
+      enabled: this.props.data.enabled
+    }} /> : 'No publisher data.'
+  }
   hideOverlay (event) {
     this.setState({ shouldShowOverlay: false })
   }
@@ -356,7 +395,7 @@ class PaymentsTab extends ImmutableComponent {
   }
   render () {
     return <div id='paymentsContainer'>
-      <ModalOverlay title={'Hello'} content={'World!'} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
+      <ModalOverlay title={'Payment Log'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
         <div className='settingsListLink pull-right' data-l10n-id='disconnect' onClick={this.disconnect.bind(this)} />
@@ -366,7 +405,7 @@ class PaymentsTab extends ImmutableComponent {
         <div className='settingsListLink pull-right' data-l10n-id='update' onClick={this.update.bind(this)} />
         <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showOverlay.bind(this)} />
       </div>
-      <LedgerTable data={this.props.data} />
+      <LedgerTable data={this.props.data.synopsis || []} />
     </div>
   }
 }
@@ -559,7 +598,7 @@ class AboutPreferences extends React.Component {
       })
     })
     window.addEventListener(messages.LEDGER_UPDATED, (e) => {
-      PaymentsTab.defaultProps.data = e.detail.synopsis
+      PaymentsTab.defaultProps.data = e.detail
     })
     window.addEventListener(messages.SITE_SETTINGS_UPDATED, (e) => {
       this.setState({
