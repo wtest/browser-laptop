@@ -14,6 +14,7 @@ const settings = require('../constants/settings')
 const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
 const tableSort = require('tablesort')
+const pad = require('underscore.string/pad')
 
 const adblock = appConfig.resourceNames.ADBLOCK
 const cookieblock = appConfig.resourceNames.COOKIEBLOCK
@@ -114,15 +115,16 @@ class LedgerTableRow extends ImmutableComponent {
     s = (s + 's ')
     return (d + h + m + s + '')
   }
+  padLeft (v) { return pad(v, 12, '0') }
   render () {
     var favicon = this.props.faviconURL ? <img src={this.props.faviconURL} alt={this.props.site} /> : null
     return <tr>
-      <td className='data-sort'>{this.props.rank}</td>
+      <td data-sort={this.padLeft(this.props.rank)}>{this.props.rank}</td>
       <td><a href={this.props.publisherURL}>{favicon}<span>{this.props.site}</span></a></td>
-      <td className='data-sort'>{this.props.views}</td>
-      <td className='data-sort'>{this.getFormattedTime()}</td>
+      <td data-sort={this.padLeft(this.props.views)}>{this.props.views}</td>
+      <td data-sort={this.padLeft(this.props.duration)}>{this.getFormattedTime()}</td>
       <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-      <td className='data-sort'>{this.props.percentage}</td>
+      <td data-sort={this.padLeft(this.props.percentage)}>{this.props.percentage}</td>
     </tr>
   }
 }

@@ -302,13 +302,6 @@ module.exports.handleLedgerVisit = (e, location) => {
 }
 
 var handleGeneralCommunication = (event) => {
-  console.log(JSON.stringify({
-    synopsis: synopsisNormalizer(),
-    publishers: publisherNormalizer(),
-    enabled: !!client,
-    logs: logNormalizer()
-  }, null, 2))
-
   event.returnValue = {
     synopsis: synopsisNormalizer(),
     publishers: publisherNormalizer(),
