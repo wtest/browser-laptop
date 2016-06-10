@@ -184,8 +184,10 @@ var synopsisNormalizer = () => {
 
   pct = []
   for (i = 0; i < n; i++) {
+    duration = results[i].duration
+
     data[i] = { rank: i + 1,
-                 site: results[i].publisher, views: results[i].visits,
+                 site: results[i].publisher, views: results[i].visits, duration: duration,
                  daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0
                }
     if (results[i].method) {
@@ -196,7 +198,6 @@ var synopsisNormalizer = () => {
     }
     pct[i] = Math.round((results[i].score * 100) / total)
 
-    duration = results[i].duration
     if (duration >= msecs.day) {
       data[i].daysSpent = Math.max(Math.round(duration / msecs.day), 1)
     } else if (duration >= msecs.hour) {
