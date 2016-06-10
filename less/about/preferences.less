@@ -9,6 +9,78 @@ strong, div, span, li, em, p, a {
   display: none;
 }
 
+.modal {
+  opacity: 1;
+  position: fixed;
+  background: @white50;
+  width: 100vw;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 8999;
+
+  &.fade {
+    transition: @opacityTransition;
+  }
+
+  &.hidden {
+    opacity: 0;
+    z-index: -1;
+  }
+
+  .dialog {
+    position: fixed;
+    width: 90%;
+    height: 60%;
+    left: 5%;
+    top: 15%;
+    background: white;
+    border: solid 1px @lightGray;
+    border-radius: @borderRadius;
+    box-shadow: @boxShadow;
+    z-index: 9000;
+    padding: 20px;
+    box-sizing: border-box;
+
+    &.fade {
+      transition: @opacityTransition;
+    }
+  }
+
+  button {
+    display: block;
+    min-width: 80px;
+    height: 3em;
+    line-height: 3em;
+    vertical-align: middle;
+    text-align: center;
+    border: solid 1px @braveMediumOrange;
+    background: linear-gradient(to bottom, @braveOrange, @braveMediumOrange);
+    border-radius: @borderRadius;
+    color: white;
+    box-shadow: @lightBoxShadow;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+
+    &.close {
+      display: inline-block;
+      background: none;
+      height: 2em;
+      width: 2em;
+      min-width: 2em;
+      cursor: pointer;
+      border: none;
+      box-shadow: none;
+
+      span {
+        font-size: 2em;
+        color: @braveOrange;
+      }
+    }
+  }
+}
+
 .prefTabContainer {
   flex-grow: 1;
   padding: 60px 30px 30px 30px;
@@ -266,6 +338,8 @@ input[type="checkbox"][disabled] {
 }
 
 #paymentsContainer {
+  position: relative;
+  overflow-x: hidden;
 
   .titleBar {
     overflow: hidden;

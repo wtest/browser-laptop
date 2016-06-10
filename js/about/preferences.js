@@ -15,6 +15,7 @@ const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
 const tableSort = require('tablesort')
 const pad = require('underscore.string/pad')
+const classnames = require('classnames')
 
 const adblock = appConfig.resourceNames.ADBLOCK
 const cookieblock = appConfig.resourceNames.COOKIEBLOCK
@@ -100,6 +101,21 @@ class SettingCheckbox extends ImmutableComponent {
   }
 }
 
+class ModalOverlay extends ImmutableComponent {
+  render () {
+    return <div className={classnames('modal fade', { hidden: !this.props.shouldShow })} role='alert'>
+      <div className='dialog'>
+        <button type='button' className='close pull-right' onClick={this.props.onHide}>
+          <span>&times;</span>
+        </button>
+        <div className='settingsListTitle'>{this.props.title}</div>
+        <div>{this.props.content}</div>
+        <button type='button' className='pull-right' onClick={this.props.onHide}>Done</button>
+      </div>
+    </div>
+  }
+}
+
 class LedgerTableRow extends ImmutableComponent {
   getFormattedTime () {
     var d = this.props.daysSpent
@@ -112,7 +128,7 @@ class LedgerTableRow extends ImmutableComponent {
     d = (d << 0 === 0) ? '' : (d + 'd ')
     h = (h << 0 === 0) ? '' : (h + 'h ')
     m = (m << 0 === 0) ? '' : (m + 'm ')
-    s = (s + 's ')
+    s = (s << 0 === 0) ? '' : (s + 's ')
     return (d + h + m + s + '')
   }
   padLeft (v) { return pad(v, 12, '0') }
@@ -322,8 +338,15 @@ class ShieldsTab extends ImmutableComponent {
 }
 
 class PaymentsTab extends ImmutableComponent {
-  showLogOverlay (event) {
-    console.log('showLogOverlay')
+  shouldComponentUpdate () { return true }
+  componentWillMount () {
+    this.setState({ shouldShowOverlay: false })
+  }
+  hideOverlay (event) {
+    this.setState({ shouldShowOverlay: false })
+  }
+  showOverlay (event) {
+    this.setState({ shouldShowOverlay: true })
   }
   update (event) {
     console.log('update')
@@ -333,6 +356,7 @@ class PaymentsTab extends ImmutableComponent {
   }
   render () {
     return <div id='paymentsContainer'>
+      <ModalOverlay title={'Hello'} content={'World!'} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
         <div className='settingsListLink pull-right' data-l10n-id='disconnect' onClick={this.disconnect.bind(this)} />
@@ -340,7 +364,7 @@ class PaymentsTab extends ImmutableComponent {
       <div className='notificationBar'>
         <div className='pull-left' data-l10n-id='notificationBarText' />
         <div className='settingsListLink pull-right' data-l10n-id='update' onClick={this.update.bind(this)} />
-        <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showLogOverlay.bind(this)} />
+        <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showOverlay.bind(this)} />
       </div>
       <LedgerTable data={this.props.data} />
     </div>
