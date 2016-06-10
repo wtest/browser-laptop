@@ -8,6 +8,7 @@ const Immutable = require('immutable')
 const electron = global.require('electron')
 const ipc = electron.ipcRenderer
 const remote = electron.remote
+const fs = require('fs')
 
 // Actions
 const windowActions = require('../actions/windowActions')
@@ -50,7 +51,7 @@ const FrameStateUtil = require('../state/frameStateUtil')
 // Util
 const cx = require('../lib/classSet.js')
 const eventUtil = require('../lib/eventUtil')
-const { isIntermediateAboutPage } = require('../lib/appUrlUtil')
+const { isIntermediateAboutPage, getBaseUrl } = require('../lib/appUrlUtil')
 const siteSettings = require('../state/siteSettings')
 const urlParse = require('url').parse
 
@@ -174,8 +175,65 @@ class Main extends ImmutableComponent {
   }
 
   componentDidMount () {
+    ipc.send(messages.WEB_CONTENTS_INITIALIZED)
+
     this.registerSwipeListener()
     this.registerWindowLevelShortcuts()
+
+    ipc.on(messages.DOWNLOAD_DATAFILE, (event, url, nonce, headers, path) => {
+      let msg = messages.DOWNLOAD_DATAFILE_DONE + nonce
+      let args = {}
+      let stream = fs.createWriteStream(path)
+      function pump (reader) {
+        return reader.read().then((result) => {
+          if (result.done) {
+            stream.end()
+          } else {
+            const chunk = result.value
+            // Convert Uint8Array to node buffer
+            const buf = Buffer.from(chunk.buffer)
+            stream.write(buf)
+            return pump(reader)
+          }
+        }).catch((e) => {
+          ipc.send(msg, args, e.message)
+          stream.end()
+        })
+      }
+      window.fetch(url, {headers: headers}).then((response) => {
+        args.statusCode = response.status
+        if (response.status !== 200) {
+          ipc.send(msg, args)
+          return
+        }
+        let reader = response.body.getReader()
+        args.etag = response.headers.get('etag')
+        stream.on('close', () => {
+          ipc.send(msg, args)
+        })
+        return pump(reader)
+      }).catch((e) => {
+        ipc.send(msg, {}, e.message)
+        stream.end()
+      })
+    })
+
+    ipc.on(messages.SEND_XHR_REQUEST, (event, url, nonce, headers) => {
+      const xhr = new window.XMLHttpRequest()
+      xhr.open('GET', url)
+      if (headers) {
+        for (let name in headers) {
+          xhr.setRequestHeader(name, headers[name])
+        }
+      }
+      xhr.send()
+      xhr.onload = () => {
+        ipc.send(messages.GOT_XHR_RESPONSE + nonce,
+                 {statusCode: xhr.status},
+                 xhr.responseText)
+      }
+    })
+
     ipc.on(messages.SHORTCUT_NEW_FRAME, (event, url, options = {}) => {
       if (options.singleFrame) {
         const frameProps = self.props.windowState.get('frames').find((frame) => frame.get('location') === url)
@@ -195,8 +253,8 @@ class Main extends ImmutableComponent {
 
     ipc.on(messages.NEW_POPUP_WINDOW, function (evt, extensionId, src, props) {
       windowActions.setPopupWindowDetail(Immutable.fromJS({
-        left: props.offsetX,
-        top: props.offsetY + 100,
+        left: props.x,
+        top: props.y + 100,
         maxHeight: window.innerHeight - 100,
         minHeight: 400,
         src
@@ -421,77 +479,8 @@ class Main extends ImmutableComponent {
     windowActions.setReleaseNotesVisible(false)
   }
 
-  get enableAds () {
-    if (this.activeSiteSettings) {
-      if (this.activeSiteSettings.get('shieldsUp') === false) {
-        return false
-      }
-
-      if (this.activeSiteSettings.get('adControl') !== undefined) {
-        if (['blockAds', 'allowAdsAndTracking'].includes(this.activeSiteSettings.get('adControl'))) {
-          return false
-        } else {
-          return true
-        }
-      }
-    }
-
-    let enabled = this.props.appState.getIn(['adInsertion', 'enabled'])
-    if (enabled === undefined) {
-      enabled = appConfig.adInsertion.enabled
-    }
-    return enabled
-  }
-
   get enableNoScript () {
-    if (this.activeSiteSettings) {
-      if (this.activeSiteSettings.get('shieldsUp') === false) {
-        return false
-      }
-
-      if (typeof this.activeSiteSettings.get('noScript') === 'boolean') {
-        return this.activeSiteSettings.get('noScript')
-      }
-    }
-
-    let enabled = this.props.appState.getIn(['noScript', 'enabled'])
-    if (enabled === undefined) {
-      enabled = appConfig.noScript.enabled
-    }
-    return enabled
-  }
-
-  get enableFingerprintingProtection () {
-    if (this.activeSiteSettings) {
-      if (this.activeSiteSettings.get('shieldsUp') === false) {
-        return false
-      }
-
-      if (typeof this.activeSiteSettings.get('fingerprintingProtection') === 'boolean') {
-        return this.activeSiteSettings.get('fingerprintingProtection')
-      }
-    }
-
-    return getSetting(settings.BLOCK_CANVAS_FINGERPRINTING) || false
-  }
-
-  get block3rdPartyStorage () {
-    if (this.activeSiteSettings) {
-      if (this.activeSiteSettings.get('shieldsUp') === false) {
-        return false
-      }
-
-      if (typeof this.activeSiteSettings.get('cookieControl') === 'string') {
-        return this.activeSiteSettings.get('cookieControl') === 'block3rdPartyCookie'
-      }
-    }
-
-    let enabled = this.props.appState.getIn(['cookieblock', 'enabled'])
-    if (typeof enabled !== 'boolean') {
-      enabled = appConfig.cookieblock.enabled
-    }
-
-    return enabled
+    return siteSettings.activeSettings(this.activeSiteSettings, this.props.appState, appConfig).noScript
   }
 
   onCloseFrame (activeFrameProps) {
@@ -576,12 +565,15 @@ class Main extends ImmutableComponent {
     return this.props.appState.get('siteSettings')
   }
 
-  get activeSiteSettings () {
-    const activeRequestedLocation = this.activeRequestedLocation
-    if (!activeRequestedLocation) {
+  frameSiteSettings (location) {
+    if (!location) {
       return undefined
     }
-    return siteSettings.getSiteSettingsForURL(this.allSiteSettings, activeRequestedLocation)
+    return siteSettings.getSiteSettingsForURL(this.allSiteSettings, location)
+  }
+
+  get activeSiteSettings () {
+    return this.frameSiteSettings(this.activeRequestedLocation)
   }
 
   get braveShieldsDisabled () {
@@ -810,7 +802,7 @@ class Main extends ImmutableComponent {
               braveryDefaults={braveryDefaults}
               frame={frame}
               key={frame.get('key')}
-              settings={frame.get('location') === 'about:preferences'
+              settings={getBaseUrl(frame.get('location')) === 'about:preferences'
                 ? this.props.appState.get('settings') || new Immutable.Map()
                 : null}
               bookmarks={frame.get('location') === 'about:bookmarks'
@@ -824,15 +816,15 @@ class Main extends ImmutableComponent {
                     .filter((site) => site.get('tags')
                       .includes(siteTags.BOOKMARK_FOLDER)) || new Immutable.Map()
                 : null}
-              dictionaryLocale={this.props.appState.getIn(['dictionary', 'locale'])}
               passwords={this.props.appState.get('passwords')}
               allSiteSettings={allSiteSettings}
               activeSiteSettings={activeSiteSettings}
               enableAds={this.enableAds}
               ledger={ledgerInterop.generalCommunications()}
-              enableNoScript={this.enableNoScript}
               enableFingerprintingProtection={this.enableFingerprintingProtection}
               block3rdPartyStorage={this.block3rdPartyStorage}
+              frameSiteSettings={this.frameSiteSettings(frame.get('location'))}
+              enableNoScript={siteSettings.activeSettings(this.frameSiteSettings(frame.get('location')), this.props.appState, appConfig).noScript}
               isPreview={frame.get('key') === this.props.windowState.get('previewFrameKey')}
               isActive={FrameStateUtil.isFrameKeyActive(this.props.windowState, frame.get('key'))}
             />)
