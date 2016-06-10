@@ -12,6 +12,8 @@ const underscore = require('underscore')
 const messages = require('../js/constants/messages')
 const commonMenu = require('../js/commonMenu')
 
+// const request = require('../js/lib/request')
+
 // ledger alpha file goes here
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
 
@@ -269,7 +271,6 @@ module.exports.handleLedgerVisit = (e, location) => {
 
   if ((!synopsis) || (!location)) return
 
-  console.log('\n' + location + ': new=' + (!locations[location]))
   if (!locations[location]) {
     locations[location] = true
 
@@ -294,7 +295,6 @@ module.exports.handleLedgerVisit = (e, location) => {
     }
 
     syncWriter(synopsisPath, synopsis, () => {})
-    console.log(synopsis.topN(topPublishersN))
   }
   // record the new current location and timestamp
   currentLocation = location
