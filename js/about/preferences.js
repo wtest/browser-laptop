@@ -115,9 +115,10 @@ class LedgerTableRow extends ImmutableComponent {
     return (d + h + m + s + '')
   }
   render () {
+    var favicon = this.props.faviconURL ? <img src={this.props.faviconURL} alt={this.props.site} /> : null
     return <tr>
       <td>{this.props.rank}</td>
-      <td><a href={this.props.publisherURL}><img src={this.props.faviconURL} alt={this.props.site} /><span>{this.props.site}</span></a></td>
+      <td><a href={this.props.publisherURL}>{favicon}<span>{this.props.site}</span></a></td>
       <td>{this.props.views}</td>
       <td>{this.getFormattedTime()}</td>
       <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
