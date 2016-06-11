@@ -22,20 +22,22 @@ var nonce = 0
 /**
  * Sends a network request using Chromium's networks stack instead of Node's.
  * Depends on there being a loaded browser window available.
- * @param {string} url - the url to load
+ * @param {string|object} options - the url to load (if a string)
  * @param {function} callback - callback to call with the response metadata and
  *   body
  */
-module.exports.request = (url, callback) => {
+module.exports.request = (options, callback) => {
   const webContents = getWebContents()
+
   if (!webContents) {
     callback(new Error('Request failed, no webContents available'))
   } else {
     // Send a message to the main webcontents to make an XHR to the URL
     nonce++
-    webContents.send(messages.SEND_XHR_REQUEST, url, nonce)
-    ipcMain.once(messages.GOT_XHR_RESPONSE + nonce, (wnd, response, body) => {
-      callback(null, response, body)
+    if (typeof options === 'string') options = { url: options }
+    webContents.send(messages.SEND_XHR_REQUEST, options.url, nonce, null, options.responseType)
+    ipcMain.once(messages.GOT_XHR_RESPONSE + nonce, (wnd, err, response, body) => {
+      callback(err, response, body)
     })
   }
 }

@@ -11,11 +11,13 @@ const path = require('path')
 const underscore = require('underscore')
 const messages = require('../js/constants/messages')
 const commonMenu = require('../js/commonMenu')
-
-// const request = require('../js/lib/request')
+const request = require('../js/lib/request')
 
 // ledger alpha file goes here
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
+
+// ledger logging information goes here
+const logPath = path.join(app.getPath('userData'), 'ledger-log.json')
 
 // TBD: move this into appStore.getState().get(‘ledger.client’)
 const statePath = path.join(app.getPath('userData'), 'ledger-state.json')
@@ -128,22 +130,31 @@ var syncWriter = (path, obj, options, cb) => {
   })
 }
 
+var logs = []
 var callback = (err, result, delayTime) => {
-  var now
+  var i, then
+  var now = underscore.now()
   var entries = client.report()
 
   console.log('\nledger-client callback: errP=' + (!!err) + ' resultP=' + (!!result) + ' delayTime=' + delayTime)
 
   if (err) return console.log('ledger-client error: ' + err.toString() + '\n' + err.stack)
 
-  if (entries) logNormalizer(entries)
+  if (entries) {
+    then = underscore.now() - (7 * msecs.day)
+    logs = logs.concat(entries)
+
+    for (i = 0; i < logs.length; i++) if (logs[i].when > then) break
+    if ((i !== 0) && (i !== logs.length)) logs = logs.slice(i)
+
+    syncWriter(logPath, entries, { flag: 'a' }, () => {})
+  }
 
   if (!result) return run(delayTime)
 
   if (result.thisPayment) {
     console.log(JSON.stringify(result.thisPayment, null, 2))
 
-    now = underscore.now()
     if (nextPaymentPopup <= now) {
       nextPaymentPopup = now + (6 * msecs.hour)
 
@@ -166,8 +177,11 @@ var run = (delayTime) => {
 var locations = {}
 var publishers = {}
 
+// a 24x24 transparent PNG
+const faviconPNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA0xpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTExIDc5LjE1ODMyNSwgMjAxNS8wOS8xMC0wMToxMDoyMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MUNFNTM2NTcxQzQyMTFFNjhEODk5OTY1MzJCOUU0QjEiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MUNFNTM2NTYxQzQyMTFFNjhEODk5OTY1MzJCOUU0QjEiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjUxZDUzZDBmLTYzOWMtMTE3OS04Yjk3LTg3Y2M5YTUyOWRmMSIgc3RSZWY6ZG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjUxZDUzZDBmLTYzOWMtMTE3OS04Yjk3LTg3Y2M5YTUyOWRmMSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PmF3+n4AAAAoSURBVHja7M1BAQAABAQw9O98SvDbCqyT1KepZwKBQCAQCAQ3VoABAAu6Ay00hnjWAAAAAElFTkSuQmCC'
+
 var synopsisNormalizer = () => {
-  var i, duration, method, n, pct, results, total
+  var i, duration, n, pct, publisher, results, total
   var data = []
 
   results = []
@@ -186,18 +200,15 @@ var synopsisNormalizer = () => {
 
   pct = []
   for (i = 0; i < n; i++) {
+    publisher = synopsis.publishers[results[i].publisher]
     duration = results[i].duration
 
     data[i] = { rank: i + 1,
                  site: results[i].publisher, views: results[i].visits, duration: duration,
-                 daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0
+                 daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0,
+                 faviconURL: publisher.faviconURL || faviconPNG
                }
-    if (results[i].method) {
-      method = results[i].method
-      underscore.extend(data[i], { faviconURL: method + '://' + results[i].publisher + '/favicon.ico',
-                                   publisherURL: method + '://' + results[i].publisher
-                                 })
-    }
+    if (results[i].method) data[i].publisherURL = results[i].method + '://' + results[i].publisher
     pct[i] = Math.round((results[i].score * 100) / total)
 
     if (duration >= msecs.day) {
@@ -240,20 +251,39 @@ var publisherNormalizer = () => {
     data.push({ publisher: publisher, locations: underscore.map(entries, (entry) => { return entry.location }) })
   })
 
+  if (data.length === 0) {
+    data = [
+      {
+        'publisher': 'facebook.com',
+        'locations': [
+          'http://facebook.com/',
+          'https://www.facebook.com/',
+          'https://www.facebook.com/?sk=h_chr'
+        ]
+      },
+      {
+        'publisher': 'whatwg.org',
+        'locations': [
+          'https://whatwg.org/'
+        ]
+      },
+      {
+        'publisher': 'wsj.com',
+        'locations': [
+          'http://wsj.com/',
+          'http://www.wsj.com/',
+          'http://www.wsj.com/articles/gawker-declaring-bankruptcy-will-be-put-up-for-auction-1465578030',
+          'http://www.wsj.com/articles/tesla-defends-car-suspension-systems-nondisclosure-statements-1465558823',
+          'http://www.wsj.com/articles/muhammad-alis-memorial-draws-thousands-of-fans-1465570220',
+          'http://www.wsj.com/articles/the-unimprovable-awards-celebrating-6-perfect-things-1465568511',
+          'http://www.wsj.com/news/us',
+          'http://www.wsj.com/articles/white-house-asks-colleges-to-reconsider-weighing-criminal-history-in-applications-1465571388'
+        ]
+      }
+    ]
+  }
+
   return data
-}
-
-var logs = []
-var logNormalizer = (entries) => {
-  var i
-  var then = underscore.now() - (7 * msecs.day)
-
-  if (entries) logs = logs.concat(entries)
-
-  for (i = 0; i < logs.length; i++) if (logs[i].when > then) break
-  if ((i !== 0) && (i !== logs.length)) logs = logs.slice(i)
-
-  return logs
 }
 
 // courtesy of https://stackoverflow.com/questions/13483430/how-to-make-rounded-percentages-add-up-to-100#13485888
@@ -288,13 +318,34 @@ module.exports.handleLedgerVisit = (e, location) => {
   // If the location has changed and we have a previous timestamp
   if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
     console.log('addVisit ' + currentLocation)
-    publisher = synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
-    i = location.indexOf(':/')
-    if ((i > 0) && (publisher) && (!synopsis.publishers[publisher].method)) {
-      synopsis.publishers[publisher].method = location.substr(0, i)
-    }
 
-    syncWriter(synopsisPath, synopsis, () => {})
+// TBD: may need to have markup available...
+    publisher = synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
+    if (publisher) {
+      i = location.indexOf(':/')
+      if ((i > 0) && (!synopsis.publishers[publisher].method)) synopsis.publishers[publisher].method = location.substr(0, i)
+/* TBD: should look for:
+
+        <link rel='icon' href='...' />
+        <link rel='shortcut icon' href='...' />
+ */
+      if ((publisher.indexOf('/') === -1) && (!synopsis.publishers[publisher].faviconURL) &&
+          (synopsis.publishers[publisher].method)) {
+        console.log('request: ' + synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico')
+        request.request({ url: synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico',
+                          responseType: 'blob' }, (err, response, blob) => {
+          console.log('\nresponse: ' + synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico' +
+                      ' errP=' + (!!err) + ' blob=' + (blob || '').substr(0, 40) + '\n' + JSON.stringify(response, null, 2))
+          if (err) return console.log('response error: ' + err.toString())
+          if ((response.statusCode !== 200) || (blob.indexOf('data:image/') !== 0)) return
+
+          synopsis.publishers[publisher].faviconURL = blob
+          syncWriter(synopsisPath, synopsis, () => {})
+        })
+      }
+
+      syncWriter(synopsisPath, synopsis, () => {})
+    }
   }
   // record the new current location and timestamp
   currentLocation = location
@@ -303,10 +354,13 @@ module.exports.handleLedgerVisit = (e, location) => {
 
 var handleGeneralCommunication = (event) => {
   event.returnValue = {
+    enabled: !!client,
     synopsis: synopsisNormalizer(),
     publishers: publisherNormalizer(),
-    enabled: !!client,
-    logs: logNormalizer()
+// TBD: fill these in...
+    statusText: 'Allocations will process at 12:00am on June 28, 2016',
+    buttonLabel: 'Be Brave!',
+    buttonURL: 'https://brave.com'
   }
 }
 

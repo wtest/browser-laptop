@@ -218,20 +218,56 @@ class Main extends ImmutableComponent {
       })
     })
 
-    ipc.on(messages.SEND_XHR_REQUEST, (event, url, nonce, headers) => {
+    ipc.on(messages.SEND_XHR_REQUEST, (event, url, nonce, headers, responseType) => {
       const xhr = new window.XMLHttpRequest()
+
       xhr.open('GET', url)
       if (headers) {
         for (let name in headers) {
           xhr.setRequestHeader(name, headers[name])
         }
       }
-      xhr.send()
+      xhr.responseType = responseType || 'text'
       xhr.onload = () => {
-        ipc.send(messages.GOT_XHR_RESPONSE + nonce,
-                 {statusCode: xhr.status},
-                 xhr.responseText)
+        var done, f
+        var response = {}
+
+        // very useful for debugging...
+        for (var p in xhr) { try { response[p] = xhr[p] } catch (ex) { response[p] = ex.toString() } }
+        response.statusCode = xhr.status
+        response.headers = {}
+        xhr.getAllResponseHeaders().split('\r\n').forEach((header) => {
+          var i = header.indexOf(': ')
+
+          if (i > 0) response.headers[header.substring(0, i).toLowerCase()] = header.substring(i + 2)
+        })
+
+        done = (result) => { ipc.send(messages.GOT_XHR_RESPONSE + nonce, null, response, result) }
+
+        f = {
+          arraybuffer: () => {
+            var ab = xhr.response
+            var buffer = new Buffer(ab.byteLength)
+            var view = new Uint8Array(ab)
+
+            for (let i = 0; i < buffer.length; i++) buffer[i] = view[i]
+            done(buffer)
+          },
+
+          blob: () => {
+            var reader = new window.FileReader()
+
+            reader.readAsDataURL(xhr.response)
+            reader.onloadend = () => { done(reader.result) }
+          },
+
+          document: () => { done(xhr.responseXML) },
+
+          text: () => { done(xhr.responseText) }
+        }[responseType] || (() => { done(xhr.response) })
+        f()
       }
+      xhr.send()
     })
 
     ipc.on(messages.SHORTCUT_NEW_FRAME, (event, url, options = {}) => {
