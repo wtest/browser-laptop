@@ -7,6 +7,8 @@ const React = require('react')
 const ImmutableComponent = require('../components/immutableComponent')
 const Immutable = require('immutable')
 const cx = require('../lib/classSet.js')
+const { getZoomValuePercentage } = require('../lib/zoom')
+const config = require('../constants/config')
 const appConfig = require('../constants/appConfig')
 const preferenceTabs = require('../constants/preferenceTabs')
 const messages = require('../constants/messages')
@@ -50,6 +52,8 @@ const changeSetting = (cb, key, e) => {
     let value = e.target.value
     if (e.target.dataset && e.target.dataset.type === 'number') {
       value = parseInt(value, 10)
+    } else if (e.target.dataset && e.target.dataset.type === 'float') {
+      value = parseFloat(value)
     }
     if (e.target.type === 'number') {
       value = value.replace(/\D/g, '')
@@ -412,18 +416,32 @@ class PaymentsTab extends ImmutableComponent {
 PaymentsTab.propTypes = { data: React.PropTypes.array.isRequired }
 PaymentsTab.defaultProps = { data: [] }
 
-class SyncTab extends ImmutableComponent {
+class AdvancedTab extends ImmutableComponent {
   render () {
-    return <div id='syncContainer'>
-      Sync settings coming soon
+    const defaultZoomSetting = getSetting(settings.DEFAULT_ZOOM_LEVEL, this.props.settings)
+    return <div>
+      <SettingsList dataL10nId='contentRenderingOptions'>
+        <SettingItem dataL10nId='defaultZoomLevel'>
+          <select
+            value={defaultZoomSetting === undefined || defaultZoomSetting === null ? config.zoom.defaultValue : defaultZoomSetting}
+            data-type='float'
+            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.DEFAULT_ZOOM_LEVEL)}>
+            {
+              config.zoom.zoomLevels.map((x) =>
+                <option value={x} key={x}>{getZoomValuePercentage(x) + '%'}</option>)
+            }
+          </select>
+        </SettingItem>
+        <SettingCheckbox dataL10nId='useHardwareAcceleration' prefKey={settings.HARDWARE_ACCELERATION_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
     </div>
   }
 }
 
-class AdvancedTab extends ImmutableComponent {
+class SyncTab extends ImmutableComponent {
   render () {
-    return <div id='advancedContainer'>
-      Advanced settings coming soon
+    return <div id='syncContainer'>
+      Sync settings coming soon
     </div>
   }
 }
