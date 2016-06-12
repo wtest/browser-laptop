@@ -7,15 +7,16 @@
 const electron = require('electron')
 const app = electron.app
 const fs = require('fs')
+const moment = require('moment')
 const path = require('path')
 const underscore = require('underscore')
 const messages = require('../js/constants/messages')
-const commonMenu = require('../js/commonMenu')
 const request = require('../js/lib/request')
 
 // ledger alpha file goes here
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
 
+// TBD: remove this post beta
 // ledger logging information goes here
 const logPath = path.join(app.getPath('userData'), 'ledger-log.json')
 
@@ -33,7 +34,6 @@ var msecs = { day: 24 * 60 * 60 * 1000,
 
 var client
 var topPublishersN = 25
-var nextPaymentPopup = underscore.now() + (6 * msecs.minute)
 
 var LedgerPublisher
 var synopsis
@@ -52,7 +52,7 @@ module.exports.init = () => {
 
       try {
         state = JSON.parse(data)
-        console.log('\nstarting up ledger-client integration')
+        console.log('\nstarting up ledger client integration')
         cb(null, state)
       } catch (ex) {
         console.log(path + (state ? ' ledger' : ' parse') + ' error: ' + ex.toString())
@@ -69,6 +69,7 @@ module.exports.init = () => {
       makeClient(statePath, (err, state) => {
         if (err) return
 
+        returnValue._internal.reconcileStamp = state.reconcileStamp
         client = LedgerClient(state.personaId, state.options, state)
         client.sync(callback)
       })
@@ -110,6 +111,17 @@ module.exports.init = () => {
   })
 }
 
+var returnValue = {
+  enabled: false,
+  synopsis: null,
+  publishers: null,
+  statusText: null,
+  buttonLabel: null,
+  buttonURL: null,
+
+  _internal: {}
+}
+
 var syncP = {}
 var syncWriter = (path, obj, options, cb) => {
   if (syncP[path]) return
@@ -133,41 +145,52 @@ var syncWriter = (path, obj, options, cb) => {
 var logs = []
 var callback = (err, result, delayTime) => {
   var i, then
-  var now = underscore.now()
   var entries = client.report()
+  var now = underscore.now()
 
-  console.log('\nledger-client callback: errP=' + (!!err) + ' resultP=' + (!!result) + ' delayTime=' + delayTime)
+  console.log('\nledger client callback: errP=' + (!!err) + ' resultP=' + (!!result) + ' delayTime=' + delayTime)
 
-  if (err) return console.log('ledger-client error: ' + err.toString() + '\n' + err.stack)
+  if (err) return console.log('ledger client error: ' + err.toString() + '\n' + err.stack)
+
+  returnValue.enabled = true
 
   if (entries) {
-    then = underscore.now() - (7 * msecs.day)
+    then = now - (7 * msecs.day)
     logs = logs.concat(entries)
 
     for (i = 0; i < logs.length; i++) if (logs[i].when > then) break
     if ((i !== 0) && (i !== logs.length)) logs = logs.slice(i)
+    if (result) entries.push({ who: 'callback', what: result, when: underscore.now() })
 
     syncWriter(logPath, entries, { flag: 'a' }, () => {})
   }
 
   if (!result) return run(delayTime)
 
-  if (result.thisPayment) {
-    console.log(JSON.stringify(result.thisPayment, null, 2))
-
-    if (nextPaymentPopup <= now) {
-      nextPaymentPopup = now + (6 * msecs.hour)
-
-      commonMenu.sendToFocusedWindow(electron.BrowserWindow.getFocusedWindow(),
-                                     [ messages.SHORTCUT_NEW_FRAME, result.thisPayment.paymentURL ])
+  delete returnValue.buttonLabel
+  delete returnValue.buttonURL
+  returnValue._internal.reconcileStamp = result.reconcileStamp
+  if (result.wallet) {
+    console.log('\n\n\ndiff=' + (now - result.reconcileStamp))
+    if (result.thisPayment) {
+      returnValue.buttonLabel = 'Reconcile'
+      returnValue.buttonURL = result.thisPayment.paymentURL
     }
+  } else if (result.persona) {
+    if (result.properties) {
+      returnValue.statusText = 'Anonymously ' + (result.options.wallet ? 'registered' : 'created') + ' wallet'
+    } else {
+      returnValue.statusText = 'Preparing to anonymously ' + (result.options.wallet ? 'register' : 'create') + ' wallet'
+    }
+  } else {
+    returnValue.statusText = 'Initializing'
   }
 
   syncWriter(statePath, result, () => { run(delayTime) })
 }
 
 var run = (delayTime) => {
-  console.log('\nledger-client run: delayTime=' + delayTime)
+  console.log('\nledger client run: delayTime=' + delayTime)
 
   if (delayTime > 0) return setTimeout(() => { if (client.sync(callback)) return run(0) }, delayTime)
 
@@ -309,6 +332,8 @@ module.exports.handleLedgerVisit = (e, location) => {
       if (publisher) {
         if (!publishers[publisher]) publishers[publisher] = []
         publishers[publisher].push({ when: underscore.now(), location: location })
+
+        delete returnValue.publishers
       }
     } catch (ex) {
       console.log('getPublisher error: ' + ex.toString())
@@ -329,9 +354,10 @@ module.exports.handleLedgerVisit = (e, location) => {
         <link rel='icon' href='...' />
         <link rel='shortcut icon' href='...' />
  */
-      if ((publisher.indexOf('/') === -1) && (!synopsis.publishers[publisher].faviconURL) &&
+      if ((publisher.indexOf('/') === -1) && (typeof synopsis.publishers[publisher].faviconURL === 'undefined') &&
           (synopsis.publishers[publisher].method)) {
         console.log('request: ' + synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico')
+        synopsis.publishers[publisher].faviconURL = null
         request.request({ url: synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico',
                           responseType: 'blob' }, (err, response, blob) => {
           console.log('\nresponse: ' + synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico' +
@@ -345,6 +371,8 @@ module.exports.handleLedgerVisit = (e, location) => {
       }
 
       syncWriter(synopsisPath, synopsis, () => {})
+
+      delete returnValue.synopsis
     }
   }
   // record the new current location and timestamp
@@ -353,15 +381,32 @@ module.exports.handleLedgerVisit = (e, location) => {
 }
 
 var handleGeneralCommunication = (event) => {
-  event.returnValue = {
-    enabled: !!client,
-    synopsis: synopsisNormalizer(),
-    publishers: publisherNormalizer(),
-// TBD: fill these in...
-    statusText: 'Allocations will process at 12:00am on June 28, 2016',
-    buttonLabel: 'Be Brave!',
-    buttonURL: 'https://brave.com'
+  var now, timestamp
+
+  if (!returnValue.synopsis) returnValue.synopsis = synopsisNormalizer()
+
+  if (!returnValue.publishers) returnValue.publishers = publisherNormalizer()
+
+  if (returnValue._internal.reconcileStamp) {
+    now = underscore.now()
+
+    timestamp = now
+    underscore.keys(synopsis.publishers).forEach((publisher) => {
+      var then = underscore.last(synopsis.publishers[publisher].window).timestamp
+
+      if (timestamp > then) timestamp = then
+    })
+
+    returnValue.statusText = 'Publisher history as of ' + moment(timestamp).fromNow()
+    if (!returnValue.buttonURL) {
+      returnValue.statusText +=
+        ', reconcilation ' +
+        moment(returnValue._internal.reconcileStamp)[now < returnValue._internal.reconcileStamp ? 'toNow' : 'fromNow']()
+    }
+    console.log('\n\n\n' + returnValue.statusText)
   }
+
+  event.returnValue = returnValue
 }
 
 // If we are in the main process
