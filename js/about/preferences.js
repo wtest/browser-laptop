@@ -387,9 +387,6 @@ class PaymentsTab extends ImmutableComponent {
   showOverlay (event) {
     this.setState({ shouldShowOverlay: true })
   }
-  update (event) {
-    console.log('update')
-  }
   render () {
     return <div id='paymentsContainer'>
       <ModalOverlay title={'Payment Log'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
