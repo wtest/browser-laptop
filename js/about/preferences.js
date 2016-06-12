@@ -390,20 +390,15 @@ class PaymentsTab extends ImmutableComponent {
   update (event) {
     console.log('update')
   }
-  disconnect (event) {
-    console.log('disconnect')
-  }
   render () {
     return <div id='paymentsContainer'>
       <ModalOverlay title={'Payment Log'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
-        <div className='settingsListLink pull-right' data-l10n-id='disconnect' onClick={this.disconnect.bind(this)} />
+        <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showOverlay.bind(this)} />
       </div>
       <div className='notificationBar'>
         <div className='pull-left' data-l10n-id='notificationBarText' />
-        <div className='settingsListLink pull-right' data-l10n-id='update' onClick={this.update.bind(this)} />
-        <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showOverlay.bind(this)} />
       </div>
       <LedgerTable data={this.props.data.synopsis || []} />
     </div>
