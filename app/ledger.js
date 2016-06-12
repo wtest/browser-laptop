@@ -342,7 +342,7 @@ module.exports.handleLedgerVisit = (e, location) => {
 
   // If the location has changed and we have a previous timestamp
   if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
-    console.log('addVisit ' + currentLocation)
+    console.log('addVisit ' + currentLocation + ' for ' + moment.duration((new Date()).getTime() - currentTS).humanize())
 
 // TBD: may need to have markup available...
     publisher = synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
@@ -403,7 +403,7 @@ var handleGeneralCommunication = (event) => {
         ', reconcilation ' +
         moment(returnValue._internal.reconcileStamp)[now < returnValue._internal.reconcileStamp ? 'toNow' : 'fromNow']()
     }
-    console.log('\n\n\n' + returnValue.statusText)
+    console.log(returnValue.statusText)
   }
 
   event.returnValue = returnValue
