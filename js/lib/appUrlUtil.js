@@ -56,8 +56,14 @@ module.exports.aboutUrls = new Immutable.Map({
   'about:certerror': module.exports.getAppUrl('about-certerror.html'),
   'about:safebrowsing': module.exports.getAppUrl('about-safebrowsing.html'),
   'about:passwords': module.exports.getAppUrl('about-passwords.html'),
+  'about:flash': module.exports.getAppUrl('flash-placeholder.html'),
   'about:error': module.exports.getAppUrl('about-error.html')
 })
+
+// Whether this is the flash placeholder URL
+module.exports.isFlashUrl = (location) => {
+  return location === module.exports.getAppUrl('flash-placeholder.html')
+}
 
 module.exports.isIntermediateAboutPage = (location) =>
   ['about:safebrowsing', 'about:error', 'about:certerror'].includes(getBaseUrl(location))
