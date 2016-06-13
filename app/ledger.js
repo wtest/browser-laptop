@@ -16,9 +16,10 @@ const request = require('../js/lib/request')
 // ledger alpha file goes here
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
 
-// TBD: remove this post beta
+// TBD: remove these post beta
 // ledger logging information goes here
 const logPath = path.join(app.getPath('userData'), 'ledger-log.json')
+const publisherPath = path.join(app.getPath('userData'), 'ledger-publisher.json')
 
 // TBD: move this into appStore.getState().get(‘ledger.client’)
 const statePath = path.join(app.getPath('userData'), 'ledger-state.json')
@@ -44,7 +45,6 @@ var currentTS
 var returnValue = {
   enabled: false,
   synopsis: null,
-  publishers: null,
   statusText: null,
   buttonLabel: null,
   buttonURL: null,
@@ -119,6 +119,19 @@ module.exports.init = () => {
     } catch (ex) {
       console.log('synopsisPath parse error: ' + ex.toString())
     }
+
+    fs.readFile(publisherPath, (err, data) => {
+      if (err) {
+        if (err.code !== 'ENOENT') console.log('publisherPath read error: ' + err.toString())
+        return
+      }
+
+      try {
+        publishers = JSON.parse(data)
+      } catch (ex) {
+        console.log('publishersPath parse error: ' + ex.toString())
+      }
+    })
   })
 }
 
@@ -274,37 +287,7 @@ var publisherNormalizer = () => {
     data.push({ publisher: publisher, locations: underscore.map(entries, (entry) => { return entry.location }) })
   })
 
-  if (data.length === 0) {
-    data = [
-      {
-        'publisher': 'facebook.com',
-        'locations': [
-          'http://facebook.com/',
-          'https://www.facebook.com/',
-          'https://www.facebook.com/?sk=h_chr'
-        ]
-      },
-      {
-        'publisher': 'whatwg.org',
-        'locations': [
-          'https://whatwg.org/'
-        ]
-      },
-      {
-        'publisher': 'wsj.com',
-        'locations': [
-          'http://wsj.com/',
-          'http://www.wsj.com/',
-          'http://www.wsj.com/articles/gawker-declaring-bankruptcy-will-be-put-up-for-auction-1465578030',
-          'http://www.wsj.com/articles/tesla-defends-car-suspension-systems-nondisclosure-statements-1465558823',
-          'http://www.wsj.com/articles/muhammad-alis-memorial-draws-thousands-of-fans-1465570220',
-          'http://www.wsj.com/articles/the-unimprovable-awards-celebrating-6-perfect-things-1465568511',
-          'http://www.wsj.com/news/us',
-          'http://www.wsj.com/articles/white-house-asks-colleges-to-reconsider-weighing-criminal-history-in-applications-1465571388'
-        ]
-      }
-    ]
-  }
+  syncWriter(publisherPath, data, () => {})
 
   return data
 }
@@ -383,9 +366,9 @@ module.exports.handleLedgerVisit = (e, location) => {
 var handleGeneralCommunication = (event) => {
   var now, timestamp
 
-  if (!returnValue.synopsis) returnValue.synopsis = synopsisNormalizer()
+  publisherNormalizer()
 
-  if (!returnValue.publishers) returnValue.publishers = publisherNormalizer()
+  if (!returnValue.synopsis) returnValue.synopsis = synopsisNormalizer()
 
   if (returnValue._internal.reconcileStamp) {
     now = underscore.now()
@@ -409,8 +392,7 @@ var handleGeneralCommunication = (event) => {
     }
   }
 
-  console.log({ enabled: returnValue.enabled, synopsis: returnValue.synopsis.length, publishers: returnValue.publishers.length,
-                statusText: returnValue.statusText })
+  console.log({ enabled: returnValue.enabled, synopsis: returnValue.synopsis.length, statusText: returnValue.statusText })
 
   event.returnValue = underscore.omit(returnValue, '_internal')
 }
