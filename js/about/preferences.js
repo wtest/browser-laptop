@@ -443,7 +443,7 @@ class AdvancedTab extends ImmutableComponent {
 class SyncTab extends ImmutableComponent {
   render () {
     return <div id='syncContainer'>
-      Sync settings coming soon
+      <div className='emptyMessage' data-l10n-id='syncEmptyText' />
     </div>
   }
 }
