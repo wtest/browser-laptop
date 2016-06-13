@@ -41,6 +41,17 @@ var synopsis
 var currentLocation
 var currentTS
 
+var returnValue = {
+  enabled: false,
+  synopsis: null,
+  publishers: null,
+  statusText: null,
+  buttonLabel: null,
+  buttonURL: null,
+
+  _internal: {}
+}
+
 module.exports.init = () => {
   var LedgerClient
 
@@ -109,17 +120,6 @@ module.exports.init = () => {
       console.log('synopsisPath parse error: ' + ex.toString())
     }
   })
-}
-
-var returnValue = {
-  enabled: false,
-  synopsis: null,
-  publishers: null,
-  statusText: null,
-  buttonLabel: null,
-  buttonURL: null,
-
-  _internal: {}
 }
 
 var syncP = {}
@@ -342,7 +342,7 @@ module.exports.handleLedgerVisit = (e, location) => {
 
   // If the location has changed and we have a previous timestamp
   if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
-    console.log('addVisit ' + currentLocation + ' for ' + moment.duration((new Date()).getTime() - currentTS).humanize())
+    console.log('\naddVisit ' + currentLocation + ' for ' + moment.duration((new Date()).getTime() - currentTS).humanize())
 
 // TBD: may need to have markup available...
     publisher = synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
@@ -403,10 +403,16 @@ var handleGeneralCommunication = (event) => {
         ', reconcilation ' +
         moment(returnValue._internal.reconcileStamp)[now < returnValue._internal.reconcileStamp ? 'toNow' : 'fromNow']()
     }
-    console.log(returnValue.statusText)
+    if (returnValue.statusText !== returnValue._internal.statusText) {
+      returnValue._internal.statusText = returnValue.statusText
+      console.log(returnValue.statusText)
+    }
   }
 
-  event.returnValue = returnValue
+  console.log({ enabled: returnValue.enabled, synopsis: returnValue.synopsis.length, publishers: returnValue.publishers.length,
+                statusText: returnValue.statusText })
+
+  event.returnValue = underscore.omit(returnValue, '_internal')
 }
 
 // If we are in the main process
