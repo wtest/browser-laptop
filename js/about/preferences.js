@@ -151,12 +151,16 @@ class LedgerTableRow extends ImmutableComponent {
 
 class LedgerTable extends ImmutableComponent {
   componentDidMount (event) {
+    console.log(this)
     return tableSort(document.getElementById('ledgerTable'))
   }
   render () {
     var rows = []
-    for (let i = 0; i < this.props.data.length; i++) {
-      rows[i] = <LedgerTableRow {...this.props.data[i]} />
+    if (!this.props.data.synopsis) {
+      return false
+    }
+    for (let i = 0; i < this.props.data.synopsis.length; i++) {
+      rows[i] = <LedgerTableRow {...this.props.data.synopsis[i]} />
     }
     return <table id='ledgerTable' className='sort'>
       <thead>
@@ -187,10 +191,14 @@ class PublisherTableRow extends ImmutableComponent {
 
 class PublisherTable extends ImmutableComponent {
   componentDidMount (event) {
+    console.log(this)
     return tableSort(document.getElementById('publisherTable'))
   }
   render () {
     var rows = []
+    if (!this.props.data.publishers) {
+      return false
+    }
     for (let i = 0; i < this.props.data.publishers.length; i++) {
       rows[i] = <PublisherTableRow {...this.props.data.publishers[i]} />
     }
@@ -379,10 +387,9 @@ class PaymentsTab extends ImmutableComponent {
     this.setState({ shouldShowOverlay: false })
   }
   getOverlayContent () {
-    return !this.props.data.publishers || this.props.data.publishers.length < 1 ? <PublisherTable data={{
+    return this.props.data.publishers ? <PublisherTable data={{
       publishers: this.props.data.publishers,
-      logs: this.props.data.logs,
-      enabled: this.props.data.enabled
+      logs: this.props.data.logs
     }} /> : 'No publisher data.'
   }
   hideOverlay (event) {
@@ -392,17 +399,20 @@ class PaymentsTab extends ImmutableComponent {
     this.setState({ shouldShowOverlay: true })
   }
   render () {
-    return <div id='paymentsContainer'>
-      <ModalOverlay title={'Payment Log'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
+    var notification = this.props.data.statusText ? <div className='pull-left'>this.props.data.statusText</div> : <div className='pull-left' data-l10n-id='notificationEmptyText' />
+    var table = this.props.data.enabled ? <LedgerTable data={this.props.data} /> : <div className='pull-left' data-l10n-id='tableEmptyText' />
+    var button = this.props.data.buttonLabel && this.props.data.buttonURL ? <a className='settingsListTitle pull-right' href={this.props.data.buttonURL}>{this.props.data.buttonLabel}</a> : null
+    return this.props.data.enabled ? <div id='paymentsContainer'>
+      <ModalOverlay title={'Payment Log'} content={null} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
-        <div className='settingsListLink pull-right' data-l10n-id='viewLog' onClick={this.showOverlay.bind(this)} />
+        {button}
       </div>
       <div className='notificationBar'>
-        <div className='pull-left' data-l10n-id='notificationBarText' />
+        {notification}
       </div>
-      <LedgerTable data={this.props.data.synopsis || []} />
-    </div>
+      {table}
+    </div> : <div className='emptyMessage' data-l10n-id='publisherEmptyText' />
   }
 }
 PaymentsTab.propTypes = { data: React.PropTypes.array.isRequired }
