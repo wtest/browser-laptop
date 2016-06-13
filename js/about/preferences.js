@@ -399,7 +399,7 @@ class PaymentsTab extends ImmutableComponent {
     this.setState({ shouldShowOverlay: true })
   }
   render () {
-    var notification = this.props.data.statusText ? <div className='pull-left'>this.props.data.statusText</div> : <div className='pull-left' data-l10n-id='notificationEmptyText' />
+    var notification = this.props.data.statusText ? <div className='pull-left'>{this.props.data.statusText}</div> : <div className='pull-left' data-l10n-id='notificationEmptyText' />
     var table = this.props.data.enabled ? <LedgerTable data={this.props.data} /> : <div className='pull-left' data-l10n-id='tableEmptyText' />
     var button = this.props.data.buttonLabel && this.props.data.buttonURL ? <a className='settingsListTitle pull-right' href={this.props.data.buttonURL}>{this.props.data.buttonLabel}</a> : null
     return this.props.data.enabled ? <div id='paymentsContainer'>
