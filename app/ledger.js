@@ -13,11 +13,10 @@ const underscore = require('underscore')
 const messages = require('../js/constants/messages')
 const request = require('../js/lib/request')
 
-// ledger alpha file goes here
+// TBD: remove this post alpha
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
 
 // TBD: remove these post beta
-// ledger logging information goes here
 const logPath = path.join(app.getPath('userData'), 'ledger-log.json')
 const publisherPath = path.join(app.getPath('userData'), 'ledger-publisher.json')
 
@@ -38,6 +37,8 @@ var topPublishersN = 25
 
 var LedgerPublisher
 var synopsis
+var locations
+var publishers
 
 var currentLocation
 var currentTS
@@ -121,6 +122,9 @@ module.exports.init = () => {
     }
 
     fs.readFile(publisherPath, (err, data) => {
+      locations = {}
+      publishers = {}
+
       if (err) {
         if (err.code !== 'ENOENT') console.log('publisherPath read error: ' + err.toString())
         return
@@ -128,6 +132,11 @@ module.exports.init = () => {
 
       try {
         publishers = JSON.parse(data)
+        underscore.keys(publishers).sort().forEach((publisher) => {
+          var entries = publishers[publisher]
+
+          entries.forEach((entry) => { locations[entry.location] = true })
+        })
       } catch (ex) {
         console.log('publishersPath parse error: ' + ex.toString())
       }
@@ -184,7 +193,6 @@ var callback = (err, result, delayTime) => {
   delete returnValue.buttonURL
   returnValue._internal.reconcileStamp = result.reconcileStamp
   if (result.wallet) {
-    console.log('\n\n\ndiff=' + (now - result.reconcileStamp))
     if (result.thisPayment) {
       returnValue.buttonLabel = 'Reconcile'
       returnValue.buttonURL = result.thisPayment.paymentURL
@@ -209,9 +217,6 @@ var run = (delayTime) => {
 
   if (client.isReadyToReconcile()) client.reconcile(synopsis.topN(topPublishersN), callback)
 }
-
-var locations = {}
-var publishers = {}
 
 // a 24x24 transparent PNG
 const faviconPNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA0xpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTExIDc5LjE1ODMyNSwgMjAxNS8wOS8xMC0wMToxMDoyMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MUNFNTM2NTcxQzQyMTFFNjhEODk5OTY1MzJCOUU0QjEiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MUNFNTM2NTYxQzQyMTFFNjhEODk5OTY1MzJCOUU0QjEiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjUxZDUzZDBmLTYzOWMtMTE3OS04Yjk3LTg3Y2M5YTUyOWRmMSIgc3RSZWY6ZG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjUxZDUzZDBmLTYzOWMtMTE3OS04Yjk3LTg3Y2M5YTUyOWRmMSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PmF3+n4AAAAoSURBVHja7M1BAQAABAQw9O98SvDbCqyT1KepZwKBQCAQCAQ3VoABAAu6Ay00hnjWAAAAAElFTkSuQmCC'
@@ -274,7 +279,7 @@ var synopsisNormalizer = () => {
 }
 
 var publisherNormalizer = () => {
-  var data = []
+  var data = {}
   var then = underscore.now() - (7 * msecs.day)
 
   underscore.keys(publishers).sort().forEach((publisher) => {
@@ -284,7 +289,7 @@ var publisherNormalizer = () => {
     for (i = 0; i < entries.length; i++) if (entries[i].when > then) break
     if ((i !== 0) && (i !== entries.length)) entries = entries.slice(i)
 
-    data.push({ publisher: publisher, locations: underscore.map(entries, (entry) => { return entry.location }) })
+    if (entries.length > 0) data[publisher] = entries
   })
 
   syncWriter(publisherPath, data, () => {})
@@ -307,7 +312,7 @@ module.exports.handleLedgerVisit = (e, location) => {
 
   if ((!synopsis) || (!location)) return
 
-  if (!locations[location]) {
+  if ((locations) && (!locations[location])) {
     locations[location] = true
 
     try {
@@ -339,12 +344,16 @@ module.exports.handleLedgerVisit = (e, location) => {
  */
       if ((publisher.indexOf('/') === -1) && (typeof synopsis.publishers[publisher].faviconURL === 'undefined') &&
           (synopsis.publishers[publisher].method)) {
+/*
         console.log('request: ' + synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico')
+ */
         synopsis.publishers[publisher].faviconURL = null
         request.request({ url: synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico',
                           responseType: 'blob' }, (err, response, blob) => {
+/*
           console.log('\nresponse: ' + synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico' +
                       ' errP=' + (!!err) + ' blob=' + (blob || '').substr(0, 40) + '\n' + JSON.stringify(response, null, 2))
+ */
           if (err) return console.log('response error: ' + err.toString())
           if ((response.statusCode !== 200) || (blob.indexOf('data:image/') !== 0)) return
 
@@ -381,18 +390,14 @@ var handleGeneralCommunication = (event) => {
     })
 
     returnValue.statusText = 'Publisher history as of ' + moment(timestamp).fromNow()
-    if (!returnValue.buttonURL) {
+    if ((!returnValue.buttonURL) || (now >= returnValue._internal.reconcileStamp)) {
       returnValue.statusText +=
-        ', reconcilation ' +
-        moment(returnValue._internal.reconcileStamp)[now < returnValue._internal.reconcileStamp ? 'toNow' : 'fromNow']()
+        ', reconcilation due ' +
+        moment(returnValue._internal.reconcileStamp)[now >= returnValue._internal.reconcileStamp ? 'fromNow' : 'toNow']()
     }
-    if (returnValue.statusText !== returnValue._internal.statusText) {
-      returnValue._internal.statusText = returnValue.statusText
-      console.log(returnValue.statusText)
-    }
+    returnValue.statusText += '.'
+    if (returnValue.statusText !== returnValue._internal.statusText) returnValue._internal.statusText = returnValue.statusText
   }
-
-  console.log({ enabled: returnValue.enabled, synopsis: returnValue.synopsis.length, statusText: returnValue.statusText })
 
   event.returnValue = underscore.omit(returnValue, '_internal')
 }
