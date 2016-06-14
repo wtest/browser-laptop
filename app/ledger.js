@@ -412,7 +412,7 @@ var handleGeneralCommunication = (event) => {
     returnValue.statusText = 'Publisher history as of ' + moment(timestamp).fromNow()
     if ((!returnValue.buttonURL) || (now >= returnValue._internal.reconcileStamp)) {
       if (now < returnValue._internal.reconcileStamp) {
-        returnValue.statusText += ', reconcilation in ' + moment(returnValue._internal.reconcileStamp).fromNow()
+        returnValue.statusText += ', reconcilation ' + moment(returnValue._internal.reconcileStamp).fromNow()
       } else {
         returnValue.statusText += ', reconcilation due ' + moment(returnValue._internal.reconcileStamp).toNow()
       }
