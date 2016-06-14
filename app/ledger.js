@@ -395,6 +395,11 @@ module.exports.handleLedgerVisit = (e, location) => {
 var handleGeneralCommunication = (event) => {
   var now, timestamp
 
+  if (!returnValue.enabled) {
+    event.returnValue = { enabled: false }
+    return
+  }
+
   publisherNormalizer()
 
   if (!returnValue.synopsis) returnValue.synopsis = synopsisNormalizer()
