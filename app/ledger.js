@@ -79,9 +79,20 @@ module.exports.init = () => {
       console.log('found ' + statePath)
 
       makeClient(statePath, (err, state) => {
+        var info
+
         if (err) return
 
+        returnValue.enabled = true
         returnValue._internal.reconcileStamp = state.reconcileStamp
+        info = state.thisPayment
+        if (info) returnValue._internal.reconcileStamp = info.paymentStamp
+        if ((info) && ((!info.infoExpires) || (underscore.now() < info.infoExpires))) {
+          returnValue.buttonLabel = 'Reconcile'
+          returnValue.buttonURL = info.paymentURL +
+                                    (info.paymentURL.indexOf('?') > 0 ? '&' : '?') +
+                                    'redirect_uri=' + encodeURIComponent('about:preferences#privacy')
+        }
         client = LedgerClient(state.personaId, state.options, state)
         client.sync(callback)
       })
@@ -193,15 +204,18 @@ var callback = (err, result, delayTime) => {
   delete returnValue.buttonURL
   returnValue._internal.reconcileStamp = result.reconcileStamp
   if (result.wallet) {
+    returnValue.statusText = ''
     if (result.thisPayment) {
       returnValue.buttonLabel = 'Reconcile'
-      returnValue.buttonURL = result.thisPayment.paymentURL
+      returnValue.buttonURL = result.thisPayment.paymentURL +
+                                (result.thisPayment.paymentURL.indexOf('?') > 0 ? '&' : '?') +
+                                'redirect_uri=' + encodeURIComponent('about:preferences#privacy')
     }
   } else if (result.persona) {
     if (result.properties) {
-      returnValue.statusText = 'Anonymously ' + (result.options.wallet ? 'registered' : 'created') + ' wallet'
+      returnValue.statusText = 'Anonymously ' + (result.options.wallet ? 'registered' : 'created') + ' wallet.'
     } else {
-      returnValue.statusText = 'Preparing to anonymously ' + (result.options.wallet ? 'register' : 'create') + ' wallet'
+      returnValue.statusText = 'Preparing to anonymously ' + (result.options.wallet ? 'register' : 'create') + ' wallet.'
     }
   } else {
     returnValue.statusText = 'Initializing'
@@ -213,9 +227,15 @@ var callback = (err, result, delayTime) => {
 var run = (delayTime) => {
   console.log('\nledger client run: delayTime=' + delayTime)
 
+  if (delayTime === 0) {
+    delayTime = client.timeUntilReconcile()
+    if (delayTime === false) delayTime = 0
+  }
   if (delayTime > 0) return setTimeout(() => { if (client.sync(callback)) return run(0) }, delayTime)
 
-  if (client.isReadyToReconcile()) client.reconcile(synopsis.topN(topPublishersN), callback)
+  if (client.isReadyToReconcile()) return client.reconcile(synopsis.topN(topPublishersN), callback)
+
+  console.log('\nwhat? wait.')
 }
 
 // a 24x24 transparent PNG
@@ -391,9 +411,11 @@ var handleGeneralCommunication = (event) => {
 
     returnValue.statusText = 'Publisher history as of ' + moment(timestamp).fromNow()
     if ((!returnValue.buttonURL) || (now >= returnValue._internal.reconcileStamp)) {
-      returnValue.statusText +=
-        ', reconcilation due ' +
-        moment(returnValue._internal.reconcileStamp)[now >= returnValue._internal.reconcileStamp ? 'fromNow' : 'toNow']()
+      if (now < returnValue._internal.reconcileStamp) {
+        returnValue.statusText += ', reconcilation in ' + moment(returnValue._internal.reconcileStamp).fromNow()
+      } else {
+        returnValue.statusText += ', reconcilation due ' + moment(returnValue._internal.reconcileStamp).toNow()
+      }
     }
     returnValue.statusText += '.'
     if (returnValue.statusText !== returnValue._internal.statusText) returnValue._internal.statusText = returnValue.statusText
