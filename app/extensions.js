@@ -109,7 +109,7 @@ let generateBraveManifest = () => {
     'form-action': '\'none\'',
     'referrer': 'no-referrer',
     'style-src': '\'self\' \'unsafe-inline\'',
-    'img-src': '\'self\' * data:'
+    'img-src': '\'self\' data:'
   }
 
   if (process.env.NODE_ENV === 'development') {
