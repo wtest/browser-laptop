@@ -6,6 +6,8 @@
 const React = require('react')
 const ImmutableComponent = require('../components/immutableComponent')
 const Immutable = require('immutable')
+const SwitchControl = require('../components/switchControl')
+const ModalOverlay = require('../components/modalOverlay')
 const cx = require('../lib/classSet.js')
 const { getZoomValuePercentage } = require('../lib/zoom')
 const config = require('../constants/config')
@@ -17,7 +19,6 @@ const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
 const tableSort = require('tablesort')
 const pad = require('underscore.string/pad')
-const classnames = require('classnames')
 
 const adblock = appConfig.resourceNames.ADBLOCK
 const cookieblock = appConfig.resourceNames.COOKIEBLOCK
@@ -34,6 +35,7 @@ const hintCount = 3
 
 // Stylesheets
 require('../../less/about/preferences.less')
+require('../../less/switchControls.less')
 require('../../node_modules/font-awesome/css/font-awesome.css')
 
 const permissionNames = ['mediaPermission',
@@ -94,28 +96,11 @@ class SettingItem extends ImmutableComponent {
 class SettingCheckbox extends ImmutableComponent {
   render () {
     return <div style={this.props.style} className='settingItem'>
-      <span className='checkboxContainer'>
-        <input type='checkbox' id={this.props.prefKey}
-          disabled={this.props.disabled}
-          onChange={this.props.onChange ? this.props.onChange : changeSetting.bind(null, this.props.onChangeSetting, this.props.prefKey)}
-          checked={this.props.checked !== undefined ? this.props.checked : getSetting(this.props.prefKey, this.props.settings)} />
-      </span>
+      <SwitchControl id={this.props.prefKey}
+        disabled={this.props.disabled}
+        onClick={this.props.onChange ? this.props.onChange : changeSetting.bind(null, this.props.onChangeSetting, this.props.prefKey)}
+        checkedOn={this.props.checked !== undefined ? this.props.checked : getSetting(this.props.prefKey, this.props.settings)} />
       <label data-l10n-id={this.props.dataL10nId} htmlFor={this.props.prefKey} />
-    </div>
-  }
-}
-
-class ModalOverlay extends ImmutableComponent {
-  render () {
-    return <div className={classnames('modal fade', { hidden: !this.props.shouldShow })} role='alert'>
-      <div className='dialog'>
-        <button type='button' className='close pull-right' onClick={this.props.onHide}>
-          <span>&times;</span>
-        </button>
-        <div className='settingsListTitle'>{this.props.title}</div>
-        <div>{this.props.content}</div>
-        <button type='button' className='pull-right' onClick={this.props.onHide}>Done</button>
-      </div>
     </div>
   }
 }

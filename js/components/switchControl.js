@@ -5,8 +5,8 @@
 const React = require('react')
 const ImmutableComponent = require('./immutableComponent')
 const cx = require('../lib/classSet')
-const ipc = require('electron').ipcRenderer
-const messages = require('../constants/messages')
+// const ipc = require('electron').ipcRenderer
+// const messages = require('../constants/messages')
 
 /**
  * Represents an on/off switch control
@@ -26,7 +26,7 @@ class SwitchControl extends ImmutableComponent {
   }
   onInfoClick () {
     if (this.props.infoUrl) {
-      ipc.emit(messages.SHORTCUT_NEW_FRAME, {}, this.props.infoUrl)
+      // ipc.emit(messages.SHORTCUT_NEW_FRAME, {}, this.props.infoUrl)
     }
   }
   render () {

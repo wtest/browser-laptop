@@ -249,10 +249,14 @@ a {
   .settingItem {
     margin-bottom: 10px;
 
-    > * {
+    > *:not(.switchControl) {
       margin-bottom: 10px;
       min-width: 160px;
       line-height: 2em;
+    }
+
+    .switchControl {
+      min-width: 60px;
     }
 
     span {
