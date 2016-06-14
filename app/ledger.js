@@ -254,9 +254,6 @@ var synopsisNormalizer = () => {
     results.push(underscore.extend({ publisher: publisher }, underscore.omit(synopsis.publishers[publisher], 'window')))
   }, synopsis)
   results = underscore.sortBy(results, (entry) => { return -entry.score })
-
-  n = topPublishersN
-  if ((n > 0) && (results.length > n)) results = results.slice(0, n)
   n = results.length
 
   total = 0
