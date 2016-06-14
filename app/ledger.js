@@ -54,6 +54,10 @@ var returnValue = {
 }
 
 module.exports.init = () => {
+  try { init() } catch (ex) { console.log('initialization failed: ' + ex.toString() + '\n' + ex.stack) }
+}
+
+var init = () => {
   var LedgerClient
 
   var makeClient = (path, cb) => {
