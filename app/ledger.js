@@ -47,6 +47,7 @@ var returnValue = {
   enabled: false,
   synopsis: null,
   statusText: null,
+  notifyP: false,
 
   _internal: {}
 }
@@ -420,16 +421,18 @@ var handleGeneralCommunication = (event) => {
   }
   console.log('\n' + JSON.stringify(underscore.omit(result, [ 'synopsis' ]), null, 2))
 
+  returnValue.notifyP = false
   event.returnValue = result
 }
 
 var triggerNotice = () => {
   delete returnValue._internal.triggerID
 
+  returnValue.notifyP = false
   if (!returnValue._internal.paymentInfo) return
 
   returnValue._internal.triggerID = setTimeout(() => { triggerNotice() }, 3 * msecs.hour)
-  ipc.send(messages.LEDGER_NOTICE)
+  returnValue.notifyP = true
 }
 
 // If we are in the main process
