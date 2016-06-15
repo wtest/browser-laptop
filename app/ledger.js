@@ -47,8 +47,6 @@ var returnValue = {
   enabled: false,
   synopsis: null,
   statusText: null,
-  buttonLabel: null,
-  buttonURL: null,
 
   _internal: {}
 }
@@ -89,13 +87,10 @@ var init = () => {
 
         returnValue.enabled = true
         returnValue._internal.reconcileStamp = state.reconcileStamp
-        info = state.thisPayment
-        if (info) returnValue._internal.reconcileStamp = info.paymentStamp
-        if ((info) && ((!info.infoExpires) || (underscore.now() < info.infoExpires))) {
-          returnValue.buttonLabel = 'Reconcile'
-          returnValue.buttonURL = info.paymentURL +
-                                    (info.paymentURL.indexOf('?') > 0 ? '&' : '?') +
-                                    'redirect_uri=' + encodeURIComponent('about:preferences#privacy')
+        info = state.paymentInfo
+        if (info) {
+          returnValue._internal.paymentInfo = info
+          returnValue._internal.triggerID = setTimeout(() => { triggerNotice() }, 5 * msecs.minute)
         }
         client = LedgerClient(state.personaId, state.options, state)
         client.sync(callback)
@@ -204,17 +199,13 @@ var callback = (err, result, delayTime) => {
 
   if (!result) return run(delayTime)
 
-  delete returnValue.buttonLabel
-  delete returnValue.buttonURL
   returnValue._internal.reconcileStamp = result.reconcileStamp
   if (result.wallet) {
-    returnValue.statusText = ''
-    if (result.thisPayment) {
-      returnValue.buttonLabel = 'Reconcile'
-      returnValue.buttonURL = result.thisPayment.paymentURL +
-                                (result.thisPayment.paymentURL.indexOf('?') > 0 ? '&' : '?') +
-                                'redirect_uri=' + encodeURIComponent('about:preferences#privacy')
+    if ((result.paymentInfo) && (!returnValue._internal.triggerID)) {
+      returnValue._internal.paymentInfo = result.paymentInfo
+      returnValue._internal.triggerID = setTimeout(() => { triggerNotice() }, 5 * msecs.minute)
     }
+    returnValue.statusText = 'Initialized.'
   } else if (result.persona) {
     if (result.properties) {
       returnValue.statusText = 'Anonymously ' + (result.options.wallet ? 'registered' : 'created') + ' wallet.'
@@ -394,7 +385,7 @@ module.exports.handleLedgerVisit = (e, location) => {
 }
 
 var handleGeneralCommunication = (event) => {
-  var now, timestamp
+  var info, now, result, timestamp
 
   if (!returnValue.enabled) {
     event.returnValue = { enabled: false }
@@ -415,19 +406,30 @@ var handleGeneralCommunication = (event) => {
       if (timestamp > then) timestamp = then
     })
 
-    returnValue.statusText = 'Publisher history as of ' + moment(timestamp).fromNow()
-    if ((!returnValue.buttonURL) || (now >= returnValue._internal.reconcileStamp)) {
-      if (now < returnValue._internal.reconcileStamp) {
-        returnValue.statusText += ', reconcilation ' + moment(returnValue._internal.reconcileStamp).fromNow()
-      } else {
-        returnValue.statusText += ', reconcilation due ' + moment(returnValue._internal.reconcileStamp).toNow()
-      }
-    }
-    returnValue.statusText += '.'
-    if (returnValue.statusText !== returnValue._internal.statusText) returnValue._internal.statusText = returnValue.statusText
+    returnValue.statusText = 'Publisher synopsis as of ' + moment(timestamp).fromNow() + ', reconcilation due ' +
+      moment(returnValue._internal.reconcileStamp)[now < returnValue._internal.reconcileStamp ? 'toNow' : 'fromNow']() + '.'
   }
 
-  event.returnValue = underscore.omit(returnValue, '_internal')
+  result = underscore.omit(returnValue, '_internal')
+  info = returnValue._internal.paymentInfo
+  if (info) {
+    result = underscore.extend(result, underscore.pick(info, [ 'balance', 'address', 'btc', 'amount', 'currency' ]))
+    result.paymentURL = 'bitcoin:' + info.address + '?amount=' + info.btc + '&label=' + encodeURI('Brave Software')
+    result.paymentIMG = 'https://chart.googleapis.com/chart?chs=225x225&chld=L|2&cht=qr&chl=' + encodeURI(result.paymentURL)
+    if ((info.buyURLExpires) && (info.buyURLExpires > underscore.now())) result.buyURL = info.buyURL
+  }
+  console.log('\n' + JSON.stringify(underscore.omit(result, [ 'synopsis' ]), null, 2))
+
+  event.returnValue = result
+}
+
+var triggerNotice = () => {
+  delete returnValue._internal.triggerID
+
+  if (!returnValue._internal.paymentInfo) return
+
+  returnValue._internal.triggerID = setTimeout(() => { triggerNotice() }, 3 * msecs.hour)
+  ipc.send(messages.LEDGER_NOTICE)
 }
 
 // If we are in the main process

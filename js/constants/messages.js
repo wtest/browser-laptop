@@ -131,6 +131,7 @@ const messages = {
   // Ledger
   LEDGER_VISIT: _,
   LEDGER_GENERAL_COMMUNICATION: _,
+  LEDGER_NOTICE: _,
   LEDGER_UPDATED: _
 }
 
