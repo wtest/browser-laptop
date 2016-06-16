@@ -44,6 +44,10 @@ strong, div, span, li, em, p, a {
     &.fade {
       transition: @transitionFast;
     }
+
+    .settingsListTitle:first-of-type {
+      margin-bottom: 10px;
+    }
   }
 
   button {
@@ -515,8 +519,8 @@ input[type="checkbox"][disabled] {
       margin: 0 auto;
     }
     img {
-      width: 96px;
-      height: 96px;
+      width: 150px;
+      height: 150px;
       margin: 8px auto;
       background: @lightGray;
       border: none;
@@ -525,6 +529,11 @@ input[type="checkbox"][disabled] {
       margin: 16px auto;
       padding-left: 16px;
       padding-right: 16px;
+    }
+    &:last-of-type {
+      button {
+        margin-top: 3em;
+      }
     }
   }
 }

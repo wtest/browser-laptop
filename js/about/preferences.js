@@ -185,14 +185,10 @@ class BitcoinDashboard extends ImmutableComponent {
           <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' data-clipboard={this.props.address} onClick={this.copyToClipboard.bind(this, this.props.address)} />
           <button data-l10n-id='bitcoinVisitAccount' onClick={this.goToURL.bind(this, this.props.paymentURL)} />
           <div data-l10n-id='bitcoinQRCodeText' />
-          <div>
-            <span data-l10n-id='bitcoinBalance' />
-            <span>{('$' + this.props.amount + '(' + this.props.btc + ')')}</span>
-          </div>
         </div>
         <div className='panel'>
           <div className='settingsListTitle' data-l10n-id='moneyAdd' />
-          <img src={this.props.paymentIMG || 'Error loading QR code.'} width={'75%'} alt={'Coinbase'} />
+          <img src='./img/coinbase_logo_blue_trans.png' alt='Coinbase' />
           <button data-l10n-id='add' onClick={this.addMoney.bind(this)} />
         </div>
       </div>
@@ -370,6 +366,23 @@ class PaymentsTab extends ImmutableComponent {
   componentWillMount () {
     this.setState({ shouldShowOverlay: false })
   }
+  getTableContent () {
+    return this.props.data.enabled ? <LedgerTable data={this.props.data} /> : <div className='pull-left' data-l10n-id='tableEmptyText' />
+  }
+  getButtonContent () {
+    return this.props.data.buttonLabel && this.props.data.buttonURL ? <a className='settingsListTitle pull-right' href={this.props.data.buttonURL}>{this.props.data.buttonLabel}</a> : null
+  }
+  getNotificationContent () {
+    return this.props.data.statusText ? <div className='notificationBar'>
+      <div className='pull-left'>{this.props.data.statusText}</div>
+      <div className='pull-right'>
+        <span data-l10n-id='bitcoinBalance' />
+        <span>{this.props.data.amount}</span>
+      </div>
+    </div> : <div className='notificationBar'>
+      <div className='pull-left' data-l10n-id='notificationEmptyText' />
+    </div>
+  }
   getOverlayContent () {
     BitcoinDashboard.defaultProps = this.props.data
     return <BitcoinDashboard />
@@ -381,20 +394,15 @@ class PaymentsTab extends ImmutableComponent {
     this.setState({ shouldShowOverlay: true })
   }
   render () {
-    var notification = this.props.data.statusText ? <div className='pull-left'>{this.props.data.statusText}</div> : <div className='pull-left' data-l10n-id='notificationEmptyText' />
-    var table = this.props.data.enabled ? <LedgerTable data={this.props.data} /> : <div className='pull-left' data-l10n-id='tableEmptyText' />
-    var button = this.props.data.buttonLabel && this.props.data.buttonURL ? <a className='settingsListTitle pull-right' href={this.props.data.buttonURL}>{this.props.data.buttonLabel}</a> : null
     return this.props.data.enabled ? <div id='paymentsContainer'>
       <ModalOverlay title={'addFunds'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
-        {button}
+        {this.getButtonContent()}
         <div className='settingsListLink pull-right' data-l10n-id='addFundsTitle' value='addFundsTitle' onClick={this.showOverlay.bind(this)} />
       </div>
-      <div className='notificationBar'>
-        {notification}
-      </div>
-      {table}
+      {this.getNotificationContent()}
+      {this.getTableContent()}
     </div> : <div className='emptyMessage' data-l10n-id='publisherEmptyText' />
   }
 }
