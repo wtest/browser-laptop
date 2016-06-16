@@ -114,6 +114,45 @@ strong, div, span, li, em, p, a {
       display: flex;
       align-items: center;
       width: 100%;
+      background: transparent;
+      padding: 10px 0 0 10px;
+
+      &:before,
+      &::before {
+        content: none;
+      }
+
+      > i {
+        display: block;
+        width: 28px;
+        height: 28px;
+
+        &.i-list-alt {
+          background: url('../../img/list.svg') 0 0 / contain no-repeat;
+        }
+        &.i-search {
+          background: url('../../img/search.svg') 0 0 / contain no-repeat;
+        }
+        &.i-bookmark-o {
+          background: url('../../img/bookmark.svg') 0 0 / contain no-repeat;
+        }
+        &.i-lock {
+          background: url('../../img/lock.svg') 0 0 / contain no-repeat;
+        }
+        &.i-user {
+          background: url('../../img/shields.svg') 0 0 / contain no-repeat;
+        }
+        &.i-bitcoin {
+          background: url('../../img/bitcoin.svg') 0 0 / contain no-repeat;
+        }
+        &.i-refresh {
+          background: url('../../img/refresh.svg') 0 0 / contain no-repeat;
+        }
+        &.i-server {
+          background: url('../../img/advanced.svg') 0 0 / contain no-repeat;
+        }
+      }
+
     }
     &.selected {
       .topBarButton.fa {
@@ -132,9 +171,10 @@ strong, div, span, li, em, p, a {
   cursor: default;
   display: inline-block;
   font-size: 22px;
-  padding: 12px;
+  padding: 0;
   position: relative;
   width: 40px;
+  height: 50px;
   cursor: pointer;
 
   &:before {
@@ -215,7 +255,8 @@ strong, div, span, li, em, p, a {
   display: inline-block;
   color: white;
   font-size: 0.7em;
-  margin-left: 15px;
+  height: 28px;
+  margin-top: 3px;
 
   &:before {
     display: inline-block;

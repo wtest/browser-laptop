@@ -136,7 +136,6 @@ class LedgerTableRow extends ImmutableComponent {
 
 class LedgerTable extends ImmutableComponent {
   componentDidMount (event) {
-    console.log(this)
     return tableSort(document.getElementById('ledgerTable'))
   }
   render () {
@@ -156,42 +155,6 @@ class LedgerTable extends ImmutableComponent {
           <th className='sort-header' data-l10n-id='timeSpent' />
           <th className='sort-header notImplemented' data-l10n-id='adjustment' />
           <th className='sort-header'>&#37;</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows}
-      </tbody>
-    </table>
-  }
-}
-
-class PublisherTableRow extends ImmutableComponent {
-  render () {
-    return <tr>
-      <td>{this.props.publisher}</td>
-      <td>{this.props.locations}</td>
-    </tr>
-  }
-}
-
-class PublisherTable extends ImmutableComponent {
-  componentDidMount (event) {
-    console.log(this)
-    return tableSort(document.getElementById('publisherTable'))
-  }
-  render () {
-    var rows = []
-    if (!this.props.data.publishers) {
-      return false
-    }
-    for (let i = 0; i < this.props.data.publishers.length; i++) {
-      rows[i] = <PublisherTableRow {...this.props.data.publishers[i]} />
-    }
-    return <table id='publisherTable' className='sort'>
-      <thead>
-        <tr>
-          <th className='sort-header' data-l10n-id='publisher' />
-          <th className='sort-header' data-l10n-id='visits' />
         </tr>
       </thead>
       <tbody>
@@ -372,10 +335,7 @@ class PaymentsTab extends ImmutableComponent {
     this.setState({ shouldShowOverlay: false })
   }
   getOverlayContent () {
-    return this.props.data.publishers ? <PublisherTable data={{
-      publishers: this.props.data.publishers,
-      logs: this.props.data.logs
-    }} /> : 'No publisher data.'
+    return <iframe style={{ width: '100%', height: '100%', border: 'solid 1px gray' }}></iframe>
   }
   hideOverlay (event) {
     this.setState({ shouldShowOverlay: false })
@@ -388,10 +348,11 @@ class PaymentsTab extends ImmutableComponent {
     var table = this.props.data.enabled ? <LedgerTable data={this.props.data} /> : <div className='pull-left' data-l10n-id='tableEmptyText' />
     var button = this.props.data.buttonLabel && this.props.data.buttonURL ? <a className='settingsListTitle pull-right' href={this.props.data.buttonURL}>{this.props.data.buttonLabel}</a> : null
     return this.props.data.enabled ? <div id='paymentsContainer'>
-      <ModalOverlay title={'Payment Log'} content={null} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
+      <ModalOverlay title={'Add Funds'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
         {button}
+        <div className='settingsListLink pull-right' data-l10n-id='addFunds' value='addFunds' onClick={this.showOverlay.bind(this)} />
       </div>
       <div className='notificationBar'>
         {notification}
@@ -461,6 +422,7 @@ class PreferenceNavigationButton extends ImmutableComponent {
           fa: true,
           [this.props.icon]: true
         })}>
+        <i className={this.props.icon.replace('fa-', 'i-')} />
         <div className='tabMarkerText'
           data-l10n-id={this.props.dataL10nId} />
       </div>
