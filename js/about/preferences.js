@@ -34,8 +34,9 @@ const isDarwin = navigator.platform === 'MacIntel'
 const hintCount = 3
 
 // Stylesheets
-require('../../less/about/preferences.less')
+
 require('../../less/switchControls.less')
+require('../../less/about/preferences.less')
 require('../../node_modules/font-awesome/css/font-awesome.css')
 
 const permissionNames = ['mediaPermission',
@@ -161,6 +162,41 @@ class LedgerTable extends ImmutableComponent {
         {rows}
       </tbody>
     </table>
+  }
+}
+
+class BitcoinDashboard extends ImmutableComponent {
+  addMoney () {
+    console.log('add dollaz')
+  }
+  copyToClipboard (clipboard) {
+    console.log('Bitcoin Address: ' + clipboard)
+  }
+  goToURL (url) {
+    return window.open(url, '_blank')
+  }
+  render () {
+    return <div id='bitcoinDashboard'>
+      <div>{this.props.statusText}</div>
+      <div className='board'>
+        <div className='panel'>
+          <div className='settingsListTitle' data-l10n-id='bitcoinAdd' />
+          <img src={this.props.paymentIMG} width={'75%'} alt={'Add Bitcoin'} />
+          <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' data-clipboard={this.props.address} onClick={this.copyToClipboard.bind(this, this.props.address)} />
+          <button data-l10n-id='bitcoinVisitAccount' onClick={this.goToURL.bind(this, this.props.paymentURL)} />
+          <div data-l10n-id='bitcoinQRCodeText' />
+          <div>
+            <span data-l10n-id='bitcoinBalance' />
+            <span>{('$' + this.props.amount + '(' + this.props.btc + ')')}</span>
+          </div>
+        </div>
+        <div className='panel'>
+          <div className='settingsListTitle' data-l10n-id='moneyAdd' />
+          <img src={this.props.paymentIMG || 'Error loading QR code.'} width={'75%'} alt={'Coinbase'} />
+          <button data-l10n-id='add' onClick={this.addMoney.bind(this)} />
+        </div>
+      </div>
+    </div>
   }
 }
 
@@ -335,7 +371,8 @@ class PaymentsTab extends ImmutableComponent {
     this.setState({ shouldShowOverlay: false })
   }
   getOverlayContent () {
-    return <iframe style={{ width: '100%', height: '100%', border: 'solid 1px gray' }}></iframe>
+    BitcoinDashboard.defaultProps = this.props.data
+    return <BitcoinDashboard />
   }
   hideOverlay (event) {
     this.setState({ shouldShowOverlay: false })
@@ -348,11 +385,11 @@ class PaymentsTab extends ImmutableComponent {
     var table = this.props.data.enabled ? <LedgerTable data={this.props.data} /> : <div className='pull-left' data-l10n-id='tableEmptyText' />
     var button = this.props.data.buttonLabel && this.props.data.buttonURL ? <a className='settingsListTitle pull-right' href={this.props.data.buttonURL}>{this.props.data.buttonLabel}</a> : null
     return this.props.data.enabled ? <div id='paymentsContainer'>
-      <ModalOverlay title={'Add Funds'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
+      <ModalOverlay title={'addFunds'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
         {button}
-        <div className='settingsListLink pull-right' data-l10n-id='addFunds' value='addFunds' onClick={this.showOverlay.bind(this)} />
+        <div className='settingsListLink pull-right' data-l10n-id='addFundsTitle' value='addFundsTitle' onClick={this.showOverlay.bind(this)} />
       </div>
       <div className='notificationBar'>
         {notification}

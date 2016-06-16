@@ -17,8 +17,8 @@ class ModalOverlay extends ImmutableComponent {
         <button type='button' className='close pull-right' onClick={this.props.onHide}>
           <span>&times;</span>
         </button>
-        <div className='settingsListTitle'>{this.props.title}</div>
-        <div>{this.props.content}</div>
+        <div className='settingsListTitle' data-l10n-id={this.props.title} />
+        {this.props.content}
         <button type='button' className='pull-right' onClick={this.props.onHide}>Done</button>
       </div>
     </div>

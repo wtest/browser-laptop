@@ -31,7 +31,6 @@ strong, div, span, li, em, p, a {
   .dialog {
     position: fixed;
     width: 90%;
-    height: 60%;
     left: 5%;
     top: 15%;
     background: white;
@@ -270,13 +269,19 @@ a {
 
 .settingsListTitle,
 .settingsListLink {
-  color: @braveOrange;
+  color: black;
   font-size: 1.2em;
 }
 
 .settingsListLink {
+  color: @braveOrange;
   font-size: 1em;
   cursor: pointer;
+
+  &.alt {
+    color: black;
+    text-decoration: underline;
+  }
 
   &:hover {
     text-decoration: underline;
@@ -490,6 +495,36 @@ input[type="checkbox"][disabled] {
           cursor: pointer;
         }
       }
+    }
+  }
+}
+
+.board {
+  overflow-x: hidden;
+  clear: both;
+  display: flex;
+
+  .panel {
+    flex: 1;
+    margin-top: 40px;
+    margin-bottom: 40px;
+
+    * {
+      display: block;
+      text-align: center;
+      margin: 0 auto;
+    }
+    img {
+      width: 96px;
+      height: 96px;
+      margin: 8px auto;
+      background: @lightGray;
+      border: none;
+    }
+    button {
+      margin: 16px auto;
+      padding-left: 16px;
+      padding-right: 16px;
     }
   }
 }
