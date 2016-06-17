@@ -13,7 +13,6 @@ var port = (function () {
       return
     }
 
-    flashListenerInit()
     if (m.adInsertion && m.adInsertion.enabled) {
       adInsertion(m.adInsertion.url)
     }
@@ -22,6 +21,9 @@ var port = (function () {
     }
     if (m.locale) {
       initSpellCheck(m.locale)
+    }
+    if (m.flash && m.flash.enabled) {
+      flashListenerInit(m.flash.url)
     }
   }
 

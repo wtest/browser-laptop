@@ -118,6 +118,11 @@ const activeSettings = (siteSettings, appState, appConfig) => {
     url: appConfig.adInsertion.url
   }
 
+  settings.flash = {
+    enabled: settings.flash === true,
+    url: appConfig.flash.url
+  }
+
   settings.block3rdPartyStorage = settings.cookieControl === 'block3rdPartyCookie'
 
   return Object.assign(defaults, settings)
