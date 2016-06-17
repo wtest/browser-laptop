@@ -27,6 +27,7 @@ const FindBar = require('./findbar.js')
 const consoleStrings = require('../constants/console')
 const { aboutUrls, isSourceAboutUrl, isTargetAboutUrl, getTargetAboutUrl, getBaseUrl } = require('../lib/appUrlUtil')
 const { isFrameError } = require('../lib/errorUtil')
+const locale = require('../l10n')
 
 class Frame extends ImmutableComponent {
   constructor () {
@@ -35,6 +36,12 @@ class Frame extends ImmutableComponent {
     this.onFind = this.onFind.bind(this)
     this.onFindHide = this.onFindHide.bind(this)
     this.onFocus = this.onFocus.bind(this)
+    // Maps notification message to its callback
+    this.notificationCallbacks = {}
+    // Hosts for which Flash is allowed to be detected
+    this.flashAllowedHosts = {}
+    // Change to DNT requires restart
+    this.doNotTrack = getSetting(settings.DO_NOT_TRACK)
   }
 
   isAboutPage () {
@@ -75,12 +82,18 @@ class Frame extends ImmutableComponent {
   }
 
   shouldCreateWebview () {
-    return !this.webview || this.webview.allowRunningInsecureContent !== this.allowRunningInsecureContent()
+    return !this.webview || this.webview.allowRunningInsecureContent !== this.allowRunningInsecureContent() ||
+      this.webview.allowRunningPlugins !== this.allowRunningPlugins()
   }
 
   allowRunningInsecureContent () {
     let hack = siteHacks[urlParse(this.props.frame.get('location')).hostname]
     return !!(hack && hack.allowRunningInsecureContent)
+  }
+
+  allowRunningPlugins () {
+    let host = urlParse(this.props.frame.get('location')).host
+    return host && this.flashAllowedHosts[host]
   }
 
   updateWebview (cb) {
@@ -133,13 +146,18 @@ class Frame extends ImmutableComponent {
       this.webview.setAttribute('partition', partition)
     }
 
-    const hack = siteHacks[urlParse(location).hostname]
+    const parsedUrl = urlParse(location)
+    const hack = siteHacks[parsedUrl.hostname]
     if (hack && hack.userAgent) {
       this.webview.setAttribute('useragent', hack.userAgent)
     }
     if (this.allowRunningInsecureContent()) {
       this.webview.setAttribute('allowRunningInsecureContent', true)
       this.webview.allowRunningInsecureContent = true
+    }
+    if (this.allowRunningPlugins()) {
+      this.webview.setAttribute('plugins', true)
+      this.webview.allowRunningPlugins = true
     }
 
     if (!guestInstanceId || src !== 'about:blank') {
@@ -327,6 +345,12 @@ class Frame extends ImmutableComponent {
           this.webview.copy()
         }
         break
+      case 'find-next':
+        this.onFindAgain(true)
+        break
+      case 'find-prev':
+        this.onFindAgain(false)
+        break
     }
     if (activeShortcut) {
       windowActions.setActiveFrameShortcut(this.props.frame, null, null)
@@ -432,8 +456,68 @@ class Frame extends ImmutableComponent {
       method.apply(this, e.args)
     })
 
+    const interceptFlash = (url) => {
+      this.webview.stop()
+      // Generate a random string that is unlikely to collide. Not
+      // cryptographically random.
+      const nonce = Math.random().toString()
+      if (this.props.flashInstalled) {
+        const parsedUrl = urlParse(this.props.frame.get('location'))
+        const host = parsedUrl.host
+        if (!host) {
+          return
+        }
+        const message = `Allow ${host} to run Flash Player?`
+        // Show Flash notification bar
+        appActions.showMessageBox({
+          buttons: [locale.translation('deny'), locale.translation('allow')],
+          message,
+          options: {
+            nonce
+          }
+        })
+        this.notificationCallbacks[message] = (buttonIndex) => {
+          if (buttonIndex === 1) {
+            this.flashAllowedHosts[host] = true
+            parsedUrl.search = parsedUrl.search || 'brave_flash_allowed'
+            if (!parsedUrl.search.includes('brave_flash_allowed')) {
+              parsedUrl.search = parsedUrl.search + '&brave_flash_allowed'
+            }
+            windowActions.loadUrl(this.props.frame, parsedUrl.format())
+          } else {
+            appActions.hideMessageBox(message)
+          }
+        }
+      } else {
+        windowActions.loadUrl(this.props.frame, url)
+      }
+      ipc.once(messages.NOTIFICATION_RESPONSE + nonce, (e, msg, buttonIndex) => {
+        const cb = this.notificationCallbacks[msg]
+        if (cb) {
+          cb(buttonIndex)
+        }
+      })
+    }
+
     const loadStart = (e) => {
       const parsedUrl = urlParse(e.url)
+      // Instead of telling person to install Flash, ask them if they want to
+      // run Flash if it's installed.
+      const currentUrl = urlParse(this.props.frame.get('location'))
+      if ((e.url.includes('//get.adobe.com/flashplayer') ||
+           e.url.includes('//www.adobe.com/go/getflashplayer')) &&
+          ['http:', 'https:'].includes(currentUrl.protocol) &&
+          !currentUrl.hostname.includes('.adobe.com')) {
+        interceptFlash(e.url)
+      }
+      // Make sure a page that is trying to run Flash is actually allowed
+      if (parsedUrl.search && parsedUrl.search.includes('brave_flash_allowed')) {
+        if (!(parsedUrl.host in this.flashAllowedHosts)) {
+          this.webview.stop()
+          parsedUrl.search = parsedUrl.search.replace('brave_flash_allowed', '')
+          windowActions.loadUrl(this.props.frame, parsedUrl.format())
+        }
+      }
       if (e.isMainFrame && !e.isErrorPage && !e.isFrameSrcDoc) {
         windowActions.onWebviewLoadStart(this.props.frame, e.url)
         const isSecure = parsedUrl.protocol === 'https:' && !this.allowRunningInsecureContent()
@@ -452,6 +536,9 @@ class Frame extends ImmutableComponent {
       const hack = siteHacks[parsedUrl.hostname]
       if (hack && hack.pageLoadStartScript) {
         this.webview.executeJavaScript(hack.pageLoadStartScript)
+      }
+      if (this.doNotTrack) {
+        this.webview.executeJavaScript('Navigator.prototype.__defineGetter__("doNotTrack", () => {return 1});')
       }
     }
     const loadEnd = () => {
@@ -505,6 +592,10 @@ class Frame extends ImmutableComponent {
       loadStart(e)
     })
     this.webview.addEventListener('did-navigate', (e) => {
+      for (let message in this.notificationCallbacks) {
+        appActions.hideMessageBox(message)
+      }
+      this.notificationCallbacks = {}
       // only give focus focus is this is not the initial default page load
       if (this.props.isActive && this.webview.canGoBack() && document.activeElement !== this.webview) {
         this.webview.focus()
@@ -618,9 +709,18 @@ class Frame extends ImmutableComponent {
     windowActions.setPopupWindowDetail()
   }
 
+  onFindAgain (forward) {
+    if (!this.props.frame.get('findbarShown')) {
+      windowActions.setFindbarShown(this.props.frame, true)
+    }
+    const searchString = this.props.frame.getIn(['findDetail', 'searchString'])
+    if (searchString) {
+      this.onFind(searchString, this.props.frame.getIn(['findDetail', 'caseSensitivity']), forward)
+    }
+  }
+
   onFindHide () {
     windowActions.setFindbarShown(this.props.frame, false)
-    this.onClearMatch()
   }
 
   onUpdateWheelZoom () {

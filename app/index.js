@@ -44,6 +44,7 @@ const settings = require('../js/constants/settings')
 const siteSettings = require('../js/state/siteSettings')
 const spellCheck = require('./spellCheck')
 const ledger = require('./ledger')
+const flash = require('./flash')
 
 // Used to collect the per window state when shutting down the application
 let perWindowState = []
@@ -179,11 +180,20 @@ let loadAppStatePromise = SessionStore.loadAppState().catch(() => {
   return SessionStore.defaultAppState()
 })
 
+let flashInstalled = false
+
 // Some settings must be set right away on startup, those settings should be handled here.
 loadAppStatePromise.then((initialState) => {
   const { HARDWARE_ACCELERATION_ENABLED } = require('../js/constants/settings')
   if (initialState.settings[HARDWARE_ACCELERATION_ENABLED] === false) {
     app.disableHardwareAcceleration()
+  }
+  if (initialState.flash && initialState.flash.enabled === true) {
+    if (flash.init()) {
+      // Flash was initialized successfully
+      flashInstalled = true
+      return
+    }
   }
 })
 
@@ -298,6 +308,7 @@ app.on('ready', () => {
     // For tests we always want to load default app state
     const loadedPerWindowState = initialState.perWindowState
     delete initialState.perWindowState
+    initialState.flashInstalled = flashInstalled
     appActions.setState(Immutable.fromJS(initialState))
     return loadedPerWindowState
   }).then((loadedPerWindowState) => {

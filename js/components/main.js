@@ -322,7 +322,7 @@ class Main extends ImmutableComponent {
 
     const self = this
     ipc.on(messages.SHORTCUT_SET_ACTIVE_FRAME_BY_INDEX, (e, i) =>
-      windowActions.setActiveFrame(FrameStateUtil.getFrameByIndex(self.props.windowState, i)))
+      windowActions.setActiveFrame(FrameStateUtil.getFrameByDisplayIndex(self.props.windowState, i)))
 
     ipc.on(messages.SHORTCUT_SET_ACTIVE_FRAME_TO_LAST, () =>
       windowActions.setActiveFrame(self.props.windowState.getIn(['frames', self.props.windowState.get('frames').size - 1])))
@@ -844,6 +844,7 @@ class Main extends ImmutableComponent {
                       .includes(siteTags.BOOKMARK_FOLDER)) || new Immutable.Map()
                 : null}
               passwords={this.props.appState.get('passwords')}
+              flashInstalled={this.props.appState.get('flashInstalled')}
               allSiteSettings={allSiteSettings}
               activeSiteSettings={activeSiteSettings}
               enableAds={this.enableAds}

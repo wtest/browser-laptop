@@ -28,6 +28,7 @@ const storagePath = process.env.NODE_ENV !== 'test'
   ? path.join(app.getPath('userData'), sessionStorageName)
   : path.join(process.env.HOME, '.brave-test-session-store-1')
 const getSetting = require('../js/settings').getSetting
+const promisify = require('../js/lib/promisify')
 
 /**
  * Saves the specified immutable browser state to storage.
@@ -61,13 +62,15 @@ module.exports.saveAppState = (payload) => {
       payload.cleanedOnShutdown = false
     }
 
-    fs.writeFile(storagePath, JSON.stringify(payload), (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
+    const epochTimestamp = (new Date()).getTime().toString()
+    const tmpStoragePath = process.env.NODE_ENV !== 'test'
+      ? path.join(app.getPath('userData'), 'session-store-tmp-' + epochTimestamp)
+      : path.join(process.env.HOME, '.brave-test-session-store-tmp-' + epochTimestamp)
+
+    promisify(fs.writeFile, tmpStoragePath, JSON.stringify(payload))
+      .then(() => promisify(fs.rename, tmpStoragePath, storagePath))
+      .then(resolve)
+      .catch(reject)
   })
 }
 
@@ -150,7 +153,10 @@ module.exports.cleanSessionData = (sessionData) => {
     // Remove open search details
     delete frame.searchDetail
     // Remove find in page details
-    delete frame.findDetail
+    if (frame.findDetail) {
+      delete frame.findDetail.numberOfMatches
+      delete frame.findDetail.activeMatchOrdinal
+    }
     delete frame.findbarShown
     // Don't restore full screen state
     delete frame.isFullScreen
@@ -199,6 +205,8 @@ module.exports.cleanAppData = (data) => {
   data.notifications = []
   // Delete temp site settings
   data.temporarySiteSettings = {}
+  // Delete Flash state since this is checked on startup
+  delete data.flashInstalled
   // We used to store a huge list of IDs but we didn't use them.
   // Get rid of them here.
   delete data.windows
