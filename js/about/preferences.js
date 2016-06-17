@@ -171,15 +171,24 @@ class BitcoinDashboard extends ImmutableComponent {
   componentWillMount () {
     this.setState({ shouldShowOverlay: false })
   }
+  getBitcoinBalanceContent () {
+    var currency = ''
+    var amount = 'N/A'
+    if (this.props.currency && this.props.amount) {
+      currency = this.props.currency.toLowerCase()
+      amount = this.props.amount
+    }
+    return <div className='settingsListLabel'>
+      <span data-l10n-id='bitcoinBalance' />
+      <span data-l10n-id={currency} />
+      <span>{amount}</span>
+    </div>
+  }
   getOverlayContent () {
     return <div>
       <div className='board contrast'>
         <div className='panel'>
-          <div className='settingsListLabel'>
-            <span data-l10n-id='bitcoinBalance' />
-            <span data-l10n-id={this.props.currency.toLowerCase()} />
-            <span>{this.props.amount}</span>
-          </div>
+          {this.getBitcoinBalanceContent()}
         </div>
         <div className='panel'>
           <div className='settingsListLabel' data-l10n-id='braveSoftware' />
@@ -211,15 +220,10 @@ class BitcoinDashboard extends ImmutableComponent {
       <div className='board'>
         <div className='panel'>
           <div className='settingsListTitle' data-l10n-id='bitcoinAdd' />
-          <a href={this.props.paymentURL} target='_blanks'>
+          <a href={this.props.paymentURL} target='_blank'>
             <img src={this.props.paymentIMG} alt={'Add Bitcoin'} />
           </a>
-          <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' onClick={this.copyToClipboard.bind(this, this.props.address)} />
-          <div className='settingsListLabel'>
-            <span data-l10n-id='bitcoinBalance' />
-            <span data-l10n-id={this.props.currency.toLowerCase()} />
-            <span>{this.props.amount}</span>
-          </div>
+          <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' onClick={this.copyToClipboard.bind(this, this.props.address || 'Not available')} />
           <button data-l10n-id='bitcoinVisitAccount' onClick={this.goToURL.bind(this, this.props.paymentURL)} />
         </div>
         <div className='panel'>

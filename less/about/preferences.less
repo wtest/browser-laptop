@@ -37,6 +37,20 @@ strong, div, span, li, em, p, a {
       margin-left: -160px;
       width: 320px;
 
+      button.close {
+        margin-top: -8px;
+        span {
+          font-size: 1.5em;
+          color: @highlightBlue;
+        }
+      }
+
+      .settingsListTitle:first-of-type {
+        color: @highlightBlue;
+        font-size: 0.75em;
+        margin: 0;
+      }
+
       .settingsList .settingItem {
 
         > input {
@@ -84,7 +98,6 @@ strong, div, span, li, em, p, a {
     display: block;
     min-width: 80px;
     height: 3em;
-    line-height: 3em;
     vertical-align: middle;
     text-align: center;
     border: solid 1px @braveMediumOrange;
@@ -95,6 +108,7 @@ strong, div, span, li, em, p, a {
     font-size: 0.9em;
     font-weight: 600;
     cursor: pointer;
+    outline: none;
 
     &.close {
       display: inline-block;
@@ -570,7 +584,7 @@ input[type="checkbox"][disabled] {
       border: none;
     }
     button {
-      margin: 16px auto;
+      margin: 2.5em auto;
       padding-left: 16px;
       padding-right: 16px;
     }
