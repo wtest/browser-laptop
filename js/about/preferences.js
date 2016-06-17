@@ -167,7 +167,7 @@ class LedgerTable extends ImmutableComponent {
 
 class BitcoinDashboard extends ImmutableComponent {
   addMoney () {
-    console.log('add dollaz')
+    <ModalOverlay title={'addFunds'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
   }
   copyToClipboard (clipboard) {
     console.log('Bitcoin Address: ' + clipboard)
@@ -181,8 +181,14 @@ class BitcoinDashboard extends ImmutableComponent {
       <div className='board'>
         <div className='panel'>
           <div className='settingsListTitle' data-l10n-id='bitcoinAdd' />
-          <img src={this.props.paymentIMG} width={'75%'} alt={'Add Bitcoin'} />
-          <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' data-clipboard={this.props.address} onClick={this.copyToClipboard.bind(this, this.props.address)} />
+          <a href={this.props.paymentURL} target='_blanks'>
+            <img src={this.props.paymentImage} alt={'Add Bitcoin'} />
+          </a>
+          <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' onClick={this.copyToClipboard.bind(this, this.props.address)} />
+          <div className='settingsListLabel'>
+            <span data-l10n-id='bitcoinBalance' />
+            <span>{this.props.amount}</span>
+          </div>
           <button data-l10n-id='bitcoinVisitAccount' onClick={this.goToURL.bind(this, this.props.paymentURL)} />
           <div data-l10n-id='bitcoinQRCodeText' />
         </div>
@@ -375,10 +381,6 @@ class PaymentsTab extends ImmutableComponent {
   getNotificationContent () {
     return this.props.data.statusText ? <div className='notificationBar'>
       <div className='pull-left'>{this.props.data.statusText}</div>
-      <div className='pull-right'>
-        <span data-l10n-id='bitcoinBalance' />
-        <span>{this.props.data.amount}</span>
-      </div>
     </div> : <div className='notificationBar'>
       <div className='pull-left' data-l10n-id='notificationEmptyText' />
     </div>
