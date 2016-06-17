@@ -167,8 +167,30 @@ class LedgerTable extends ImmutableComponent {
 }
 
 class BitcoinDashboard extends ImmutableComponent {
-  addMoney () {
-    <ModalOverlay title={'addFunds'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
+  shouldComponentUpdate () { return true }
+  componentWillMount () {
+    this.setState({ shouldShowOverlay: false })
+  }
+  getOverlayContent () {
+    return <div>
+      <div className='board contrast'>
+        <div className='panel'>
+          <div className='settingsListLabel'>
+            <span data-l10n-id='bitcoinBalance' />
+            <span data-l10n-id={this.props.currency.toLowerCase()} />
+            <span>{this.props.amount}</span>
+          </div>
+        </div>
+        <div className='panel'>
+          <div className='settingsListLabel' data-l10n-id='braveSoftware' />
+        </div>
+      </div>
+      <SettingsList>
+        <SettingItem dataL10nId='emailAddress'>
+          <input placeholder='Your email address' />
+        </SettingItem>
+      </SettingsList>
+    </div>
   }
   copyToClipboard (clipboard) {
     console.log('Bitcoin Address: ' + clipboard)
@@ -176,8 +198,15 @@ class BitcoinDashboard extends ImmutableComponent {
   goToURL (url) {
     return window.open(url, '_blank')
   }
+  hideOverlay (event) {
+    this.setState({ shouldShowOverlay: false })
+  }
+  showOverlay (event) {
+    this.setState({ shouldShowOverlay: true })
+  }
   render () {
     return <div id='bitcoinDashboard'>
+      <ModalOverlay title={'bitcoinBuy'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div>{this.props.statusText}</div>
       <div className='board'>
         <div className='panel'>
@@ -188,14 +217,15 @@ class BitcoinDashboard extends ImmutableComponent {
           <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' onClick={this.copyToClipboard.bind(this, this.props.address)} />
           <div className='settingsListLabel'>
             <span data-l10n-id='bitcoinBalance' />
+            <span data-l10n-id={this.props.currency.toLowerCase()} />
             <span>{this.props.amount}</span>
           </div>
           <button data-l10n-id='bitcoinVisitAccount' onClick={this.goToURL.bind(this, this.props.paymentURL)} />
         </div>
         <div className='panel'>
           <div className='settingsListTitle' data-l10n-id='moneyAdd' />
-          <img src='./img/coinbase_logo_blue_trans.png' alt='Coinbase' />
-          <button data-l10n-id='add' onClick={this.addMoney.bind(this)} />
+          <div id='coinbaseLogo' />
+          <button data-l10n-id='add' onClick={this.showOverlay.bind(this)} />
         </div>
       </div>
     </div>
@@ -288,6 +318,30 @@ class TabsTab extends ImmutableComponent {
       <SettingCheckbox dataL10nId='paintTabs' prefKey={settings.PAINT_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       <SettingCheckbox dataL10nId='showTabPreviews' prefKey={settings.SHOW_TAB_PREVIEWS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
     </SettingsList>
+  }
+}
+
+class SecurityTab extends ImmutableComponent {
+  onToggleFlash (e) {
+    aboutActions.setResourceEnabled(flash, e.target.checked)
+  }
+  render () {
+    return <div>
+      <SettingsList dataL10nId='passwordSettings'>
+        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <div classname='settingItem'>
+          <span className='linkText' data-l10n-id='managePasswords'
+            onClick={aboutActions.newFrame.bind(null, {
+              location: 'about:passwords'
+            }, true)}></span>
+        </div>
+      </SettingsList>
+      <SettingsList dataL10nId='pluginSettings'>
+        <SettingCheckbox checked={this.props.braveryDefaults.get('flash')} dataL10nId='enableFlash' onChange={this.onToggleFlash} />
+      </SettingsList>
+    </div>
   }
 }
 
@@ -390,32 +444,16 @@ class PaymentsTab extends ImmutableComponent {
     </div> : <div className='emptyMessage' data-l10n-id='publisherEmptyText' />
   }
 }
+PaymentsTab.propTypes = { data: React.PropTypes.array.isRequired }
+PaymentsTab.defaultProps = { data: [] }
 
-class SecurityTab extends ImmutableComponent {
-  onToggleFlash (e) {
-    aboutActions.setResourceEnabled(flash, e.target.checked)
-  }
+class SyncTab extends ImmutableComponent {
   render () {
-    return <div>
-      <SettingsList dataL10nId='passwordSettings'>
-        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <div classname='settingItem'>
-          <span className='linkText' data-l10n-id='managePasswords'
-            onClick={aboutActions.newFrame.bind(null, {
-              location: 'about:passwords'
-            }, true)}></span>
-        </div>
-      </SettingsList>
-      <SettingsList dataL10nId='pluginSettings'>
-        <SettingCheckbox checked={this.props.braveryDefaults.get('flash')} dataL10nId='enableFlash' onChange={this.onToggleFlash} />
-      </SettingsList>
+    return <div id='syncContainer'>
+      <div className='emptyMessage' data-l10n-id='syncEmptyText' />
     </div>
   }
 }
-PaymentsTab.propTypes = { data: React.PropTypes.array.isRequired }
-PaymentsTab.defaultProps = { data: [] }
 
 class AdvancedTab extends ImmutableComponent {
   render () {
@@ -435,14 +473,6 @@ class AdvancedTab extends ImmutableComponent {
         </SettingItem>
         <SettingCheckbox dataL10nId='useHardwareAcceleration' prefKey={settings.HARDWARE_ACCELERATION_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       </SettingsList>
-    </div>
-  }
-}
-
-class SyncTab extends ImmutableComponent {
-  render () {
-    return <div id='syncContainer'>
-      <div className='emptyMessage' data-l10n-id='syncEmptyText' />
     </div>
   }
 }
