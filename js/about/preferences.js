@@ -182,7 +182,7 @@ class BitcoinDashboard extends ImmutableComponent {
         <div className='panel'>
           <div className='settingsListTitle' data-l10n-id='bitcoinAdd' />
           <a href={this.props.paymentURL} target='_blanks'>
-            <img src={this.props.paymentImage} alt={'Add Bitcoin'} />
+            <img src={this.props.paymentIMG} alt={'Add Bitcoin'} />
           </a>
           <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' onClick={this.copyToClipboard.bind(this, this.props.address)} />
           <div className='settingsListLabel'>
@@ -190,7 +190,6 @@ class BitcoinDashboard extends ImmutableComponent {
             <span>{this.props.amount}</span>
           </div>
           <button data-l10n-id='bitcoinVisitAccount' onClick={this.goToURL.bind(this, this.props.paymentURL)} />
-          <div data-l10n-id='bitcoinQRCodeText' />
         </div>
         <div className='panel'>
           <div className='settingsListTitle' data-l10n-id='moneyAdd' />
