@@ -79,6 +79,7 @@
     "ledger-publisher": "^0.8.7",
     "lru_cache": "^1.0.0",
     "moment": "^2.13.0",
+    "random-lib": "2.1.0",
     "react": "^15.0.1",
     "react-dom": "^15.0.1",
     "react-stickynode": "^1.1.2",
