@@ -38,7 +38,7 @@ describe('urlbarSuggestions', function () {
         return this.getValue(urlInput).then((val) => val === 'Page 1')
       })
       .waitForExist(urlBarSuggestions)
-      .click(urlBarSuggestions + ' li')
+      .click(urlBarSuggestions + ' li.suggestionItem')
       .waitForExist('.tab[data-frame-key="1"].active')
   })
 
@@ -57,7 +57,8 @@ describe('urlbarSuggestions', function () {
       .keys('Enter')
       .waitForExist('.tab[data-frame-key="1"].active')
   })
-  it('selects a location autocomplete result but not for titles', function * () {
+
+  it('selects a location auto complete result but not for titles', function * () {
     const page1Url = Brave.server.url('page1.html')
     yield this.app.client.ipcSend(messages.SHORTCUT_NEW_FRAME)
       .waitForExist('.tab[data-frame-key="4"].active')

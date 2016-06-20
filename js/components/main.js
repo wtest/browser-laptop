@@ -112,7 +112,7 @@ class Main extends ImmutableComponent {
   }
 
   registerSwipeListener () {
-    // Navigates back/forward on OS X two-finger swipe
+    // Navigates back/forward on macOS two-finger swipe
     var trackingFingers = false
     var deltaX = 0
     var deltaY = 0
@@ -716,7 +716,6 @@ class Main extends ImmutableComponent {
             sites={this.props.appState.get('sites')}
             activeFrame={activeFrame}
             mouseInTitlebar={this.props.windowState.getIn(['ui', 'mouseInTitlebar'])}
-            searchSuggestions={activeFrame && activeFrame.getIn(['navbar', 'urlbar', 'searchSuggestions'])}
             searchDetail={this.props.windowState.get('searchDetail')}
             enableNoScript={this.enableNoScript(activeSiteSettings)}
             noScriptIsVisible={noScriptIsVisible}
