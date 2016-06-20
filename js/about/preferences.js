@@ -185,21 +185,7 @@ class BitcoinDashboard extends ImmutableComponent {
     </div>
   }
   getOverlayContent () {
-    return <div>
-      <div className='board contrast'>
-        <div className='panel'>
-          {this.getBitcoinBalanceContent()}
-        </div>
-        <div className='panel'>
-          <div className='settingsListLabel' data-l10n-id='braveSoftware' />
-        </div>
-      </div>
-      <SettingsList>
-        <SettingItem dataL10nId='emailAddress'>
-          <input placeholder='Your email address' />
-        </SettingItem>
-      </SettingsList>
-    </div>
+    return <iframe src={this.props.buyURL} />
   }
   copyToClipboard (clipboard) {
     console.log('Bitcoin Address: ' + clipboard)
@@ -214,8 +200,9 @@ class BitcoinDashboard extends ImmutableComponent {
     this.setState({ shouldShowOverlay: true })
   }
   render () {
+    var emptyDialog = true
     return <div id='bitcoinDashboard'>
-      <ModalOverlay title={'bitcoinBuy'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
+      <ModalOverlay title={'bitcoinBuy'} content={this.getOverlayContent()} emptyDialog={emptyDialog} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div>{this.props.statusText}</div>
       <div className='board'>
         <div className='panel'>

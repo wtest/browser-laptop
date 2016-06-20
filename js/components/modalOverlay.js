@@ -11,16 +11,22 @@ const classnames = require('classnames')
  */
 
 class ModalOverlay extends ImmutableComponent {
+  getDialogContent () {
+    var title = !this.props.emptyDialog ? <div className='settingsListTitle' data-l10n-id={this.props.title} /> : null
+    var content = this.props.content
+    var button = !this.props.emptyDialog ? <button type='button' className='pull-right alt' onClick={this.props.onHide} data-l10n-id='done' /> : null
+    return <div className='dialog'>
+      <button type='button' className='close pull-right' onClick={this.props.onHide}>
+        <span>&times;</span>
+      </button>
+      {title}
+      {content}
+      {button}
+    </div>
+  }
   render () {
     return <div className={classnames('modal fade', { hidden: !this.props.shouldShow })} role='alert'>
-      <div className='dialog'>
-        <button type='button' className='close pull-right' onClick={this.props.onHide}>
-          <span>&times;</span>
-        </button>
-        <div className='settingsListTitle' data-l10n-id={this.props.title} />
-        {this.props.content}
-        <button type='button' className='pull-right alt' onClick={this.props.onHide} data-l10n-id='done' />
-      </div>
+      {this.getDialogContent()}
     </div>
   }
 }

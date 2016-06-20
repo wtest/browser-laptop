@@ -29,40 +29,37 @@ strong, div, span, li, em, p, a {
   }
 
   .modal {
-    background: @white25;
 
     .dialog {
-      top: 20%;
+      top: 50%;
       left: 50%;
-      margin-left: -160px;
-      width: 320px;
+      margin-left: -187.5px;
+      margin-top: -275px;
+      padding: 0;
+      width: 375px;
+      height: 580px;
+      background: transparent;
+      box-shadow: none;
+      border: none;
 
       button.close {
         margin-top: -8px;
+        margin-right: -8px;
         span {
           font-size: 1.5em;
           color: @highlightBlue;
         }
       }
 
-      .settingsListTitle:first-of-type {
-        color: @highlightBlue;
-        font-size: 0.75em;
+      iframe {
+        display: block;
+        width: 375px;
+        height: 550px;
+        border: none;
+        box-sizing: border-box;
         margin: 0;
-      }
-
-      .settingsList .settingItem {
-
-        > input {
-          margin: 0;
-          cursor: text;
-        }
-        > span {
-          display: block;
-          margin-top: 40px;
-          font-size: 1em;
-          color: @highlightBlue;
-        }
+        padding: 0;
+        overflow: hidden;
       }
     }
   }
