@@ -171,19 +171,6 @@ class BitcoinDashboard extends ImmutableComponent {
   componentWillMount () {
     this.setState({ shouldShowOverlay: false })
   }
-  getBitcoinBalanceContent () {
-    var currency = ''
-    var amount = 'N/A'
-    if (this.props.currency && this.props.amount) {
-      currency = this.props.currency.toLowerCase()
-      amount = this.props.amount
-    }
-    return <div className='settingsListLabel'>
-      <span data-l10n-id='bitcoinBalance' />
-      <span data-l10n-id={currency} />
-      <span>{amount}</span>
-    </div>
-  }
   getOverlayContent () {
     return <iframe src={this.props.buyURL} />
   }
